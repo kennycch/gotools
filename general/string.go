@@ -5,7 +5,6 @@ import (
 	"crypto/sha1"
 	"encoding/json"
 	"fmt"
-	"math/rand"
 	"strings"
 
 	"github.com/google/uuid"
@@ -52,7 +51,7 @@ func RandomStr(length uint) (randomStr string) {
 	charArr := strings.Split(CHAR, "")
 	charlen := len(charArr)
 	for i := 1; i <= int(length); i++ {
-		randomStr += charArr[rand.Intn(charlen)]
+		randomStr += charArr[Rand.Intn(charlen)]
 	}
 	return
 }

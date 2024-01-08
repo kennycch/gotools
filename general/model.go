@@ -1,5 +1,7 @@
 package general
 
+import "math/rand"
+
 // 科学计算法计算类型
 const (
 	Add DecimalType = iota
@@ -49,3 +51,8 @@ type Unsigned interface {
 type Float interface {
 	~float32 | ~float64
 }
+
+var (
+	// 随机种子
+	Rand *rand.Rand
+)
