@@ -41,7 +41,7 @@ func ArrayToMapping[T Ordered](array []T) (mapping map[T]bool) {
 	for _, value := range array {
 		mapping[value] = false
 	}
-	return mapping
+	return
 }
 
 /*
@@ -58,7 +58,7 @@ func Shuffle[T any](array []T) (result []T) {
 	Rand.Shuffle(len(result), func(i, j int) {
 		result[i], result[j] = result[j], result[i]
 	})
-	return result
+	return
 }
 
 /*
@@ -74,7 +74,7 @@ func InArray[T Ordered](array []T, value T) (flag bool) {
 			break
 		}
 	}
-	return flag
+	return
 }
 
 /*
@@ -94,7 +94,7 @@ func SameArray[T Ordered](arrayA []T, arrayB []T) (sameArray []T) {
 		}
 	}
 
-	return sameArray
+	return
 }
 
 /*
@@ -113,7 +113,7 @@ func DiffArray[T Ordered](arrayA []T, arrayB []T) (diffArray []T) {
 			diffArray = append(diffArray, key)
 		}
 	}
-	return diffArray
+	return
 }
 
 /*
@@ -127,5 +127,65 @@ func UniqueArray[T Ordered](array []T) (uniqueArray []T) {
 	for key := range mapping {
 		uniqueArray = append(uniqueArray, key)
 	}
-	return uniqueArray
+	return
+}
+
+/*
+删除数组指定下标元素
+array：要删除元素的数组
+deletionArray：删除元素后的数组
+*/
+func DeleteValueByKey[T any](array []T, key int) (deletionArray []T) {
+	// 创建临时数组
+	deletionArray = make([]T, 0)
+	// 如果下标不符合要求，直接返回
+	if key < 0 || key >= len(array) {
+		deletionArray = make([]T, len(array))
+		copy(deletionArray, array)
+		return
+	}
+	// 将无须删除的放入临时数组
+	for k, v := range array {
+		if k != key {
+			deletionArray = append(deletionArray, v)
+		}
+	}
+	return
+}
+
+/*
+删除数组指定值元素
+array：要处理的数组
+value：要删除的元素值
+repeat：是否重复删除（如果否，删除一次该值后将直接返回）
+*/
+func DeleteValueByValue[T Ordered](array []T, value T, repeat... bool) (deletionArray []T) {
+	flag := false
+	// 创建临时数组
+	deletionArray = make([]T, 0)
+	// 将无须删除的放入临时数组
+	for _, v := range array {
+		if v != value || (flag && (len(repeat) == 0 || !repeat[0])) {
+			deletionArray = append(deletionArray, v)
+		} else {
+			flag = true
+		}
+	}
+	return
+}
+
+/*
+转数组元素类型
+F：旧数组元素类型
+T：新数组元素类型
+oldArray：要转换的数组
+newArray：转换后的数组
+*/
+
+func ArrayChangeType[F Number, T Number](oldArray []F) (newArray []T) {
+	newArray = make([]T, 0)
+	for _, value := range oldArray {
+		newArray = append(newArray, T(value))
+	}
+	return
 }

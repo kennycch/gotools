@@ -1,0 +1,81 @@
+package sort
+
+import "gotools/general"
+
+/*
+归并排序
+array：原数组
+newArray：排序后数组
+*/
+func Merge[T general.Number](array []T, sortType SortType) (newArray []T) {
+	newArray = make([]T, len(array))
+	copy(newArray, array)
+	// 长度少于2直接返回
+	if len(newArray) < 2 {
+		return
+	}
+	m := &mergeSort[T]{
+		array:    newArray,
+		sortType: sortType,
+	}
+	m.splitAction(0, len(newArray)-1)
+	newArray = m.array
+	return
+}
+
+type mergeSort[T general.Number] struct {
+	array    []T      // 要排序的数组
+	sortType SortType // 排序类型
+}
+
+// 拆分执行
+func (m *mergeSort[T]) splitAction(start, end int) {
+	if start >= end {
+		return
+	}
+	// 取中间值
+	middle := (start + end) / 2
+	m.splitAction(start, middle)
+	m.splitAction(middle+1, end)
+	// 合并处理
+	m.mergeAcion(start, middle, end)
+}
+
+// 合并处理
+func (m *mergeSort[T]) mergeAcion(start, middle, end int) {
+	// 创建下标与临时数组
+	leftIndex, rightIndex, tempIndex := start, middle+1, 0
+	temp := make([]T, 1+end-start)
+	// 取左右下标中较小/大的放入临时数组
+	for leftIndex <= middle && rightIndex <= end {
+		if (m.array[leftIndex] <= m.array[rightIndex] && m.sortType == ASC) ||
+			(m.array[leftIndex] >= m.array[rightIndex] && m.sortType == DESC) {
+			temp[tempIndex] = m.array[leftIndex]
+			leftIndex++
+			tempIndex++
+		} else {
+			temp[tempIndex] = m.array[rightIndex]
+			rightIndex++
+			tempIndex++
+		}
+	}
+	// 判断哪边序列还有剩余元素
+	appendStart, appendEnd := 0, 0
+	if leftIndex > middle {
+		appendStart = rightIndex
+		appendEnd = end
+	} else {
+		appendStart = leftIndex
+		appendEnd = middle
+	}
+	// 将剩余元素放入临时数组
+	for appendStart <= appendEnd {
+		temp[tempIndex] = m.array[appendStart]
+		tempIndex++
+		appendStart++
+	}
+	// 将临时数组放入原数组
+	for k, v := range temp {
+		m.array[start+k] = v
+	}
+}

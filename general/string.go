@@ -58,7 +58,7 @@ func RandomStr(length uint) (randomStr string) {
 
 /*
 获取唯一ID
-id：生成的唯一ID
+id：唯一ID
 */
 func GetUniqueId() (id string) {
 	id = strings.ReplaceAll(uuid.New().String(), "-", "")
