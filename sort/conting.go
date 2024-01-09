@@ -1,7 +1,7 @@
 package sort
 
 import (
-	"gotools/general"
+	"github.com/kennycch/gotools/general"
 )
 
 /*

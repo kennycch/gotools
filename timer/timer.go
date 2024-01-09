@@ -2,7 +2,7 @@ package timer
 
 import (
 	"context"
-	"gotools/worker"
+	"github.com/kennycch/gotools/worker"
 	"math"
 	"sync/atomic"
 	"time"

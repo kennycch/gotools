@@ -2,10 +2,11 @@ package timer
 
 import (
 	"context"
-	"gotools/worker"
 	"math"
 	"sync/atomic"
 	"time"
+
+	"github.com/kennycch/gotools/worker"
 )
 
 // 新增循环任务

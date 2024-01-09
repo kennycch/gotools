@@ -1,6 +1,6 @@
 package sort
 
-import "gotools/general"
+import "github.com/kennycch/gotools/general"
 
 /*
 冒泡排序

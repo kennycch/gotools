@@ -1,6 +1,6 @@
 package sort
 
-import "gotools/general"
+import "github.com/kennycch/gotools/general"
 
 /*
 归并排序

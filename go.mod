@@ -1,4 +1,4 @@
-module gotools
+module github.com/kennycch/gotools
 
 go 1.18
 
