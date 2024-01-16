@@ -48,7 +48,7 @@ length 字符串长度
 randomStr 生成的字符串
 */
 func RandomStr(length uint) (randomStr string) {
-	charArr := strings.Split(CHAR, "")
+	charArr := strings.Split(Char, "")
 	charlen := len(charArr)
 	for i := 1; i <= int(length); i++ {
 		randomStr += charArr[Rand.Intn(charlen)]
@@ -73,5 +73,33 @@ encode：序列化后的字符串
 func JsonEncode(obj interface{}) (encode string) {
 	jsonS, _ := json.Marshal(obj)
 	encode = string(jsonS)
+	return
+}
+
+/*
+驼峰处理
+str：要处理的字符串
+isBig：是否大驼峰
+result：处理后字符串
+*/
+func HumpFormat(str string, isBig bool) (result string) {
+	if len(str) == 0 {
+		return
+	}
+	charArr := strings.Split(Char, "")
+	// 开始处理字符串
+	for i := 0; i < len(str); i++ {
+		char := string(str[i])
+		if !InArray(charArr, char) {
+			isBig = true
+			continue
+		}
+		if isBig {
+			char = strings.ToUpper(char)
+		} else {
+			char = strings.ToLower(char)
+		}
+		result += char
+	}
 	return
 }
