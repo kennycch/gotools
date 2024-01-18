@@ -96,7 +96,8 @@ func HumpFormat(str string, isBig bool) (result string) {
 		}
 		if isBig {
 			char = strings.ToUpper(char)
-		} else {
+			isBig = false
+		} else if !isBig && i == 0 {
 			char = strings.ToLower(char)
 		}
 		result += char

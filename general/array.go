@@ -159,7 +159,7 @@ array：要处理的数组
 value：要删除的元素值
 repeat：是否重复删除（如果否，删除一次该值后将直接返回）
 */
-func DeleteValueByValue[T Ordered](array []T, value T, repeat... bool) (deletionArray []T) {
+func DeleteValueByValue[T Ordered](array []T, value T, repeat ...bool) (deletionArray []T) {
 	flag := false
 	// 创建临时数组
 	deletionArray = make([]T, 0)
@@ -187,5 +187,16 @@ func ArrayChangeType[F Number, T Number](oldArray []F) (newArray []T) {
 	for _, value := range oldArray {
 		newArray = append(newArray, T(value))
 	}
+	return
+}
+
+/*
+复制数组
+array：要复制的数组
+newArray：复制后的数组
+*/
+func ArrayCopy[T any](array []T) (newArray []T) {
+	newArray = make([]T, len(array))
+	copy(newArray, array)
 	return
 }
