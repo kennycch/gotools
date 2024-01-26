@@ -12,10 +12,13 @@ import (
 	"github.com/kennycch/gotools/general"
 )
 
-func NewGameConfig(options ...setOption) *GameConfig {
-	gameConfig := &GameConfig{}
-	for _, option := range options {
-		option.apply(gameConfig)
+func NewGameConfig(options ...option) *GameConfig {
+	gameConfig := &GameConfig{
+		blackList:     make([]string, 0),
+		primaryKeyMap: make(map[string]string),
+	}
+	for _, op := range options {
+		op(gameConfig)
 	}
 	return gameConfig
 }

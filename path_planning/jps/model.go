@@ -1,4 +1,4 @@
-package a_star
+package jps
 
 import "github.com/kennycch/gotools/list"
 
@@ -10,10 +10,9 @@ const (
 )
 
 // 路径导航
-type AStar struct {
+type Jps struct {
 	mapRow         int               // 地图列数（x轴）
 	maxNode        int               // 地图最大坐标
-	diagonal       bool              // 是否可以对角线移动
 	closeList      map[int]*Node     // 已探索节点
 	openList       *list.List[*Node] // 备选中心节点
 	obstacles      map[int]struct{}  // 障碍物
@@ -25,9 +24,17 @@ type AStar struct {
 
 // 节点
 type Node struct {
-	historyCost  float64 // 历史代价（G值）
-	estimateCost float64 // 未来预计代价（H值）
-	totalCost    float64 // 总代价（F值）
-	index        int     // 节点坐标
-	parentIndex  int     // 上一个节点
+	historyCost     float64   // 历史代价（G值）
+	estimateCost    float64   // 未来预计代价（H值）
+	totalCost       float64   // 总代价（F值）
+	index           int       // 节点坐标
+	parentIndex     int       // 上一个节点
+	forcedNeighbour []int     // 强迫邻居节点
+	searchWay       *searchWay // 探索方向（起始节点为nil）
+}
+
+// 探索方向
+type searchWay struct {
+	x int
+	y int
 }

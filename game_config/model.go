@@ -20,16 +20,14 @@ var (
 	}
 )
 
+type option func(g *GameConfig)
+
 type GameConfig struct {
 	dirPath       string
 	filePath      string
 	targetPath    string
 	blackList     []string
 	primaryKeyMap map[string]string
-}
-
-type setOption interface {
-	apply(*GameConfig)
 }
 
 type jsonStruct struct {
