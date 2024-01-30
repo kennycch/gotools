@@ -35,6 +35,15 @@ func (l *List[T]) Insert(element T) (index int) {
 }
 
 /*
+删除对象
+*/
+func (l *List[T]) Remove(index int) {
+	l.lock.Lock()
+	defer l.lock.Unlock()
+	l.lists = general.DeleteValueByKey(l.lists, index)
+}
+
+/*
 获取指定范围的对象
 start：开始下标
 num：取出的数量（负数表示全部取出）
@@ -74,7 +83,7 @@ func (l *List[T]) PopFront() (element T, err error) {
 	l.lock.Lock()
 	defer l.lock.Unlock()
 	element = l.lists[0]
-	l.subList(0)
+	l.lists = general.DeleteValueByKey(l.lists, 0)
 	return
 }
 
@@ -92,7 +101,7 @@ func (l *List[T]) PopBack() (element T, err error) {
 	defer l.lock.Unlock()
 	lastIndex := len(l.lists) - 1
 	element = l.lists[lastIndex]
-	l.subList(lastIndex)
+	l.lists = general.DeleteValueByKey(l.lists, lastIndex)
 	return
 }
 
@@ -113,14 +122,6 @@ func (l *List[T]) addList(index int, element T) {
 	// 重新组成切片
 	l.lists = append(before, element)
 	l.lists = append(l.lists, after...)
-}
-
-// 减少元素
-func (l *List[T]) subList(index int) {
-	if index < 0 || index >= len(l.lists) {
-		return
-	}
-	l.lists = append(l.lists[:index], l.lists[index+1:]...)
 }
 
 // 根据分数安排对象下标

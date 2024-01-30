@@ -137,19 +137,12 @@ deletionArray：删除元素后的数组
 */
 func DeleteValueByKey[T any](array []T, key int) (deletionArray []T) {
 	// 创建临时数组
-	deletionArray = make([]T, 0)
+	deletionArray = ArrayCopy(array)
 	// 如果下标不符合要求，直接返回
 	if key < 0 || key >= len(array) {
-		deletionArray = make([]T, len(array))
-		copy(deletionArray, array)
 		return
 	}
-	// 将无须删除的放入临时数组
-	for k, v := range array {
-		if k != key {
-			deletionArray = append(deletionArray, v)
-		}
-	}
+	deletionArray = append(deletionArray[:key], deletionArray[key+1:]...)
 	return
 }
 
