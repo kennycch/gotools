@@ -131,7 +131,7 @@ func (l *List[T]) getIndex(element T) int {
 		// 从中间开始对比，减少遍历数量
 		start, end := 0, len(l.lists)
 		for {
-			if end-start <= 10 {
+			if end-start <= 5 {
 				break
 			}
 			// 取中间值
@@ -152,7 +152,7 @@ func (l *List[T]) getIndex(element T) int {
 			}
 		}
 		if index == -1 {
-			index = len(l.lists)
+			index = end
 		}
 	} else {
 		index = 0
