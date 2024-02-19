@@ -276,6 +276,7 @@ func (g *GameConfig) analysisArray(js *jsonStruct) string {
 		js.BaseStruct, js.JsonStruct, // 结构体部分
 		js.Upper, js.Upper, js.Upper, js.Upper, js.FileName, // 注册、结构体名称、文件名称
 		js.Upper, js.Lower, js.Lower, js.Lower, // 获取配置
+		js.Upper, js.Lower, js.Lower, js.Lower, // 全部配置迭代器
 		js.Upper, js.Lower, js.Lower, js.Lower, js.Upper, js.Upper, js.Lower, // 解析Json
 		js.Upper, primaryKey, // 主键
 		copyStr,   // 复制
@@ -376,6 +377,7 @@ func (g *GameConfig) analysisObject(js *jsonStruct) string {
 		js.BaseStruct, js.JsonStruct, // 结构体部分
 		js.Upper, js.Upper, js.Upper, js.Upper, js.FileName, // 注册、结构体名称、文件名称
 		js.Upper, js.Lower, js.Lower, js.Lower, // 获取配置
+		js.Upper,                                         // 全部配置迭代器
 		js.Upper, js.Lower, js.Lower, js.Upper, js.Lower, // 解析Json
 		copyStr,   // 复制
 		funcs,     // 获取配置方法

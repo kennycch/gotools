@@ -46,6 +46,17 @@ func (c %s) GetConfigByKey(id interface{}) (ICl, bool) {
 	return config, ok
 }
 
+// 全部配置迭代器
+func (c %s) IteratorConfigs(f func(key interface{}, value ICl) bool) {
+	%sConfig.lock.RLock()
+	defer %sConfig.lock.RUnlock()
+	for k, v := range %sConfig.configMap {
+		if !f(k, v) {
+			break
+		}
+	}
+}
+
 // 解析Json
 func (c %s) Analysis(content []byte) {
 	%sConfig.lock.Lock()
@@ -108,6 +119,11 @@ func (c %s) GetConfigByKey(id interface{}) (ICl, bool) {
 	return %sConfig.config, true
 }
 
+// 全部配置迭代器（对象配置中不会进行任何操作）
+func (c %s) IteratorConfigs(f func(key interface{}, value ICl) bool) {
+	
+}
+
 // 解析Json
 func (c %s) Analysis(content []byte) {
 	%sConfig.lock.Lock()
@@ -147,12 +163,14 @@ type ICl interface {
 	StructName() string
 	Analysis([]byte)
 	GetConfigByKey(interface{}) (ICl, bool)
+	IteratorConfigs(f func(key interface{}, value ICl) bool)
 }
 
 func AddCl(cl ICl) {
 	fileNameToCL[cl.FileName()] = cl
 }
 
+// 开始加载配置
 func InitCl(dirPath string) {
 	// 读取json文件
 	filepath.WalkDir(".", func(dirPath string, file fs.DirEntry, err error) error {
@@ -171,6 +189,7 @@ func InitCl(dirPath string) {
 	ClearTemp()
 }
 
+// 读取配置文件
 func readFileLoadMap(file fs.DirEntry, fileDir string) {
 	content, err := os.ReadFile(filepath.Join(fileDir, file.Name()))
 	if err != nil {
@@ -184,6 +203,7 @@ func readFileLoadMap(file fs.DirEntry, fileDir string) {
 	fileChangeTime[file.Name()] = info.ModTime().Unix()
 }
 
+// 获取单个配置
 func GetGameConfig[T ICl](cl T, id interface{}) (T, bool) {
 	strat := general.NowMilli()
 	icl, ok := cl.GetConfigByKey(id)
@@ -197,6 +217,11 @@ func GetGameConfig[T ICl](cl T, id interface{}) (T, bool) {
 		fmt.Println("load config long time", icl.StructName())
 	}
 	return cl, ok
+}
+
+// 全部配置迭代器
+func IteratorAllConfig[T ICl](cl T, f func (key interface{}, value ICl)bool) {
+	cl.IteratorConfigs(f)
 }
 
 // 监听配置更改
