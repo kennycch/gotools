@@ -20,7 +20,7 @@ keys：map的键
 */
 func MapKeys[K Ordered, V any](mapping map[K]V) (keys []K) {
 	keys = make([]K, 0)
-	for k, _ := range mapping {
+	for k := range mapping {
 		keys = append(keys, k)
 	}
 	return keys

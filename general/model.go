@@ -87,8 +87,8 @@ var (
 	httpClient = &http.Client{
 		Transport: &http.Transport{
 			DialContext: (&net.Dialer{
-				Timeout:   30 * time.Second,
-				KeepAlive: 30 * time.Second,
+				Timeout:   60 * time.Second,
+				KeepAlive: 60 * time.Second,
 			}).DialContext,
 			DisableKeepAlives:     true,
 			TLSHandshakeTimeout:   60 * time.Second,
@@ -97,7 +97,7 @@ var (
 			MaxConnsPerHost:       100,
 			IdleConnTimeout:       60 * time.Second,
 			ResponseHeaderTimeout: 60 * time.Second,
-			ExpectContinueTimeout: 0,
+			ExpectContinueTimeout: 60 * time.Second,
 		},
 		Timeout: 60 * time.Second,
 	}
