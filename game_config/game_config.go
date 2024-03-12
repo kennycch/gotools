@@ -24,6 +24,13 @@ func NewGameConfig(options ...option) *GameConfig {
 	return gameConfig
 }
 
+// 添加配置
+func (g *GameConfig) AddOptions(options ...option) {
+	for _, op := range options {
+		op(g)
+	}
+}
+
 // 生成目标目录的结构体
 func (g *GameConfig) CreateStructByDir() []error {
 	errs := []error{}
