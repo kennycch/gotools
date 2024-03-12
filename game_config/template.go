@@ -172,8 +172,8 @@ func AddCl(cl ICl) {
 // 开始加载配置
 func InitCl(dirPath string) {
 	// 读取json文件
-	filepath.WalkDir(".", func(dirPath string, file fs.DirEntry, err error) error {
-		readFileLoadMap(file, dirPath)
+	filepath.WalkDir(dirPath, func(fileDir string, file fs.DirEntry, err error) error {
+		readFileLoadMap(file, fileDir)
 		return err
 	})
 	// 解析Json
@@ -190,7 +190,7 @@ func InitCl(dirPath string) {
 
 // 读取配置文件
 func readFileLoadMap(file fs.DirEntry, fileDir string) {
-	content, err := os.ReadFile(filepath.Join(fileDir, file.Name()))
+	content, err := os.ReadFile(fileDir)
 	if err != nil {
 		return
 	}
