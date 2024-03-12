@@ -106,7 +106,7 @@ func (a *AStar) getNode(index, parentIndex int) *Node {
 	} else {
 		parentNode := a.closeList[parentIndex]
 		node.parentIndex = parentIndex
-		if a.isSameCap(index, parentIndex) || a.isSameRow(index, parentIndex) { // 水平/垂直节点
+		if a.diffCap(index, parentIndex) == 0 || a.diffRow(index, parentIndex) == 0 { // 水平/垂直节点
 			node.historyCost = general.Decimal(parentNode.historyCost, STRAIGHT, general.Add)
 		} else { // 对角节点
 			node.historyCost = general.Decimal(parentNode.historyCost, DIAGONAL, general.Add)
@@ -157,7 +157,7 @@ func (a *AStar) searchAdjoinNode() {
 
 // 探索水平节点
 func (a *AStar) addHorizontalNode(index int) {
-	if a.isInMap(index) && a.isSameCap(index, a.currIndex) && // 是否在地图范围、是否在同一行
+	if a.isInMap(index) && a.diffCap(index, a.currIndex) == 0 && // 是否在地图范围、是否在同一行
 		!a.isObstacle(index) && !a.isInCloseList(index) { // 是否是障碍物，是否已被探索过
 		node := a.getNode(index, a.currIndex)
 		a.closeList[index] = node
@@ -170,7 +170,7 @@ func (a *AStar) addHorizontalNode(index int) {
 
 // 探索垂直节点
 func (a *AStar) addVerticalNode(index int) {
-	if a.isInMap(index) && a.isSameRow(index, a.currIndex) && // 是否在地图范围、是否在同一行
+	if a.isInMap(index) && a.diffRow(index, a.currIndex) == 0 && // 是否在地图范围、是否在同一行
 		!a.isObstacle(index) && !a.isInCloseList(index) { // 是否是障碍物，是否已被探索过
 		node := a.getNode(index, a.currIndex)
 		a.closeList[index] = node
@@ -220,8 +220,8 @@ func (a *AStar) getEstimate(index int) float64 {
 
 // 曼哈顿距离
 func (a *AStar) manhattanDistance(index int) float64 {
-	xDistance := math.Abs(float64(index%a.mapRow - a.targetIndex%a.mapRow)) // x轴距离
-	yDistance := math.Abs(float64(index/a.mapRow - a.targetIndex/a.mapRow)) // y轴距离
+	xDistance := math.Abs(float64(a.diffRow(index, a.targetIndex))) // x轴距离
+	yDistance := math.Abs(float64(a.diffCap(index, a.targetIndex))) // y轴距离
 	// 计算x和y的距离总和
 	estimate := general.Decimal(xDistance, yDistance, general.Add)
 	// 最终结果要乘以十
@@ -231,8 +231,8 @@ func (a *AStar) manhattanDistance(index int) float64 {
 
 // 欧几里得距离
 func (a *AStar) euclidDIstance(index int) float64 {
-	xDistance := math.Abs(float64(index%a.mapRow - a.targetIndex%a.mapRow)) // x轴距离
-	yDistance := math.Abs(float64(index/a.mapRow - a.targetIndex/a.mapRow)) // y轴距离
+	xDistance := math.Abs(float64(a.diffRow(index, a.targetIndex))) // x轴距离
+	yDistance := math.Abs(float64(a.diffCap(index, a.targetIndex))) // y轴距离
 	// 计算直线距离
 	estimate := math.Sqrt(general.Decimal(math.Pow(xDistance, 2), math.Pow(yDistance, 2), general.Add))
 	// 最终结果要乘以十
@@ -257,14 +257,14 @@ func (a *AStar) backtrack() []int {
 	return path
 }
 
-// 是否同一行
-func (a *AStar) isSameCap(index, contrast int) bool {
-	return index/a.mapRow == contrast/a.mapRow
+// 行差
+func (a *AStar) diffCap(index, contrast int) int {
+	return index/a.mapRow - contrast/a.mapRow
 }
 
-// 是否同一列
-func (a *AStar) isSameRow(index, contrast int) bool {
-	return index%a.mapRow == contrast%a.mapRow
+// 列差
+func (a *AStar) diffRow(index, contrast int) int {
+	return index%a.mapRow - contrast%a.mapRow
 }
 
 // 是否在地图里

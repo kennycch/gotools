@@ -11,13 +11,13 @@ import (
 
 var (
 	%sConfig = %sManager{
-		configMap: make(map[interface{}]%s),
+		configMap: make(map[int]%s),
 		lock:      &sync.RWMutex{},
 	}
 )
 
 type %sManager struct {
-	configMap map[interface{}]%s
+	configMap map[int]%s
 	lock      *sync.RWMutex
 }
 
@@ -39,7 +39,7 @@ func (c %s) FileName() string {
 }
 
 // 获取配置
-func (c %s) GetConfigByKey(id interface{}) (ICl, bool) {
+func (c %s) GetConfigByKey(id int) (ICl, bool) {
 	%sConfig.lock.RLock()
 	defer %sConfig.lock.RUnlock()
 	config, ok := %sConfig.configMap[id]
@@ -47,7 +47,7 @@ func (c %s) GetConfigByKey(id interface{}) (ICl, bool) {
 }
 
 // 全部配置迭代器
-func (c %s) IteratorConfigs(f func(key interface{}, value ICl) bool) {
+func (c %s) IteratorConfigs(f func(key int, value ICl) bool) {
 	%sConfig.lock.RLock()
 	defer %sConfig.lock.RUnlock()
 	for k, v := range %sConfig.configMap {
@@ -61,7 +61,7 @@ func (c %s) IteratorConfigs(f func(key interface{}, value ICl) bool) {
 func (c %s) Analysis(content []byte) {
 	%sConfig.lock.Lock()
 	defer %sConfig.lock.Unlock()
-	%sConfig.configMap = make(map[interface{}]%s)
+	%sConfig.configMap = make(map[int]%s)
 	temp := []%sJson{}
 	json.Unmarshal(content, &temp)
 	for _, cj := range temp {
@@ -69,7 +69,7 @@ func (c %s) Analysis(content []byte) {
 	}
 }
 
-func (cj %sJson) getKey() interface{} {
+func (cj %sJson) getKey() int {
 	return cj.%s
 }
 
@@ -113,14 +113,14 @@ func (c %s) FileName() string {
 }
 
 // 获取配置
-func (c %s) GetConfigByKey(id interface{}) (ICl, bool) {
+func (c %s) GetConfigByKey(id int) (ICl, bool) {
 	%sConfig.lock.RLock()
 	defer %sConfig.lock.RUnlock()
 	return %sConfig.config, true
 }
 
 // 全部配置迭代器（对象配置中不会进行任何操作）
-func (c %s) IteratorConfigs(f func(key interface{}, value ICl) bool) {
+func (c %s) IteratorConfigs(f func(key int, value ICl) bool) {
 	
 }
 
@@ -145,7 +145,6 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/kennycch/gotools/general"
 	"github.com/kennycch/gotools/timer"
 )
 
@@ -162,8 +161,8 @@ type ICl interface {
 	FileName() string
 	StructName() string
 	Analysis([]byte)
-	GetConfigByKey(interface{}) (ICl, bool)
-	IteratorConfigs(f func(key interface{}, value ICl) bool)
+	GetConfigByKey(int) (ICl, bool)
+	IteratorConfigs(f func(key int, value ICl) bool)
 }
 
 func AddCl(cl ICl) {
@@ -204,23 +203,18 @@ func readFileLoadMap(file fs.DirEntry, fileDir string) {
 }
 
 // 获取单个配置
-func GetGameConfig[T ICl](cl T, id interface{}) (T, bool) {
-	strat := general.NowMilli()
+func GetGameConfig[T ICl](cl T, id int) (T, bool) {
 	icl, ok := cl.GetConfigByKey(id)
 	if ok {
 		cl = icl.(T)
 	} else {
 		fmt.Println("config not found", cl.StructName(), id)
 	}
-	end := general.NowMilli()
-	if end-strat >= 3 {
-		fmt.Println("load config long time", icl.StructName())
-	}
 	return cl, ok
 }
 
 // 全部配置迭代器
-func IteratorAllConfig[T ICl](cl T, f func (key interface{}, value ICl)bool) {
+func IteratorAllConfig[T ICl](cl T, f func (key int, value ICl)bool) {
 	cl.IteratorConfigs(f)
 }
 

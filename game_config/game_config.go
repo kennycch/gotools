@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"sort"
 	"strings"
 
 	"github.com/kennycch/gotools/general"
@@ -167,12 +168,21 @@ func (g *GameConfig) analysisArray(js *jsonStruct) string {
 	if err := json.Unmarshal(js.Content, &array); err != nil {
 		return ""
 	}
+	// 获取主键
+	primaryKey := g.getPrimaryKey(js)
 	if len(array) > 0 {
-		if js.FileName == "equipup.go" {
-			fmt.Println(array[0])
+		keys := []string{}
+		for k := range array[0] {
+			if k == general.HumpFormat(primaryKey, false) {
+				continue
+			}
+			keys = append(keys, k)
 		}
-		for k, v := range array[0] {
-			if v == nil {
+		sort.Strings(keys)
+		keys = append([]string{general.HumpFormat(primaryKey, false)}, keys...)
+		for _, k := range keys {
+			v, ok := array[0][k]
+			if !ok {
 				continue
 			}
 			upper, lower := general.HumpFormat(k, true), general.HumpFormat(k, false)
@@ -256,8 +266,6 @@ func (g *GameConfig) analysisArray(js *jsonStruct) string {
 	js.JsonStruct += "}\n"
 	// 复制方法
 	copyStr := g.getCopy(js)
-	// 获取主键
-	primaryKey := g.getPrimaryKey(js)
 	// 引用部分
 	pkg := ""
 	if js.HasArray {
@@ -413,17 +421,10 @@ func (g *GameConfig) getCopy(js *jsonStruct) string {
 // 获取主键
 func (g *GameConfig) getPrimaryKey(js *jsonStruct) string {
 	primaryKey, ok := g.primaryKeyMap[js.FileName]
-	if ok {
-		return primaryKey
-	} else {
-		for _, key := range js.Keys {
-			if strings.Contains(strings.ToLower(key.Lower), "id") {
-				primaryKey = key.Upper
-				break
-			}
-		}
-		return primaryKey
+	if !ok {
+		primaryKey = "Id"
 	}
+	return primaryKey
 }
 
 // 处理数组
@@ -437,7 +438,7 @@ func (g *GameConfig) handleArray(array []map[string]interface{}, js *jsonStruct,
 		case reflect.Bool: // 布尔
 			valueType, jsonType = "bool", "bool"
 		case reflect.Float64: // 数字（所有数字类型都会被识别为小数）
-			if g.isIntArray(array, key) {
+			if key == "id" || g.isIntArray(array, key) {
 				valueType, jsonType = "int", "int"
 			} else {
 				valueType, jsonType = "float64", "float64"
