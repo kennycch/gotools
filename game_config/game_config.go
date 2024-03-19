@@ -210,12 +210,12 @@ func (g *GameConfig) analysisArray(js *jsonStruct) string {
 				js.Keys = append(js.Keys, jsKey)
 			case reflect.Float64: // 数字（所有数字类型都会被识别为小数）
 				if g.isIntValue(array, k) {
-					js.BaseStruct += fmt.Sprintf("	%s int32\n", lower)
-					js.JsonStruct += fmt.Sprintf("	%s int32 `json:\"%s\"`\n", upper, k)
+					js.BaseStruct += fmt.Sprintf("	%s int64\n", lower)
+					js.JsonStruct += fmt.Sprintf("	%s int64 `json:\"%s\"`\n", upper, k)
 					jsKey := key{
 						Upper:    upper,
 						Lower:    lower,
-						KindType: "int32",
+						KindType: "int64",
 					}
 					js.Keys = append(js.Keys, jsKey)
 				} else {
@@ -325,12 +325,12 @@ func (g *GameConfig) analysisObject(js *jsonStruct) string {
 		case reflect.Float64: // 数字（所有数字类型都会被识别为小数）
 			num := v.(float64)
 			if math.Floor(num) == num {
-				js.BaseStruct += fmt.Sprintf("	%s int32\n", lower)
-				js.JsonStruct += fmt.Sprintf("	%s int32 `json:\"%s\"`\n", upper, k)
+				js.BaseStruct += fmt.Sprintf("	%s int64\n", lower)
+				js.JsonStruct += fmt.Sprintf("	%s int64 `json:\"%s\"`\n", upper, k)
 				jsKey := key{
 					Upper:    upper,
 					Lower:    lower,
-					KindType: "int32",
+					KindType: "int64",
 				}
 				js.Keys = append(js.Keys, jsKey)
 			} else {
@@ -446,7 +446,7 @@ func (g *GameConfig) handleArray(array []map[string]interface{}, js *jsonStruct,
 			valueType, jsonType = "bool", "bool"
 		case reflect.Float64: // 数字（所有数字类型都会被识别为小数）
 			if key == "id" || g.isIntArray(array, key) {
-				valueType, jsonType = "int32", "int32"
+				valueType, jsonType = "int64", "int64"
 			} else {
 				valueType, jsonType = "float64", "float64"
 			}
@@ -490,12 +490,12 @@ func (g *GameConfig) handleExtraStruct(array []map[string]interface{}, js *jsonS
 			exJs.Keys = append(exJs.Keys, jsKey)
 		case reflect.Float64: // 数字（所有数字类型都会被识别为小数）
 			if g.isIntMap(array, k, ke) {
-				exJs.BaseStruct += fmt.Sprintf("	%s int32\n", lower)
-				exJs.JsonStruct += fmt.Sprintf("	%s int32 `json:\"%s\"`\n", upper, ke)
+				exJs.BaseStruct += fmt.Sprintf("	%s int64\n", lower)
+				exJs.JsonStruct += fmt.Sprintf("	%s int64 `json:\"%s\"`\n", upper, ke)
 				jsKey := key{
 					Upper:    upper,
 					Lower:    lower,
-					KindType: "int32",
+					KindType: "int64",
 				}
 				exJs.Keys = append(exJs.Keys, jsKey)
 			} else {
