@@ -5,6 +5,8 @@ var (
 	normalArray = []string{
 		"[]bool",
 		"[]int",
+		"[]int32",
+		"[]int64",
 		"[]float64",
 		"[]string",
 	}
