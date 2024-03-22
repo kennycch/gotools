@@ -28,16 +28,20 @@ func SetBlackList(fileName ...string) option {
 	}
 }
 
-// 默认主键
-type Key struct {
-	JsonFileName string
-	PrimaryKey   string
-}
-
+// 设置主键
 func SetPrimaryKey(keys ...Key) option {
 	return func(g *GameConfig) {
 		for _, key := range keys {
 			g.primaryKeyMap[key.JsonFileName] = key.PrimaryKey
+		}
+	}
+}
+
+// 设置分组
+func SetGroup(groups ...Group) option {
+	return func(g *GameConfig) {
+		for _, group := range groups {
+			g.groupList[group.JsonFileName] = group
 		}
 	}
 }

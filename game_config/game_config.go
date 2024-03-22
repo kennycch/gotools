@@ -16,6 +16,7 @@ import (
 func NewGameConfig(options ...option) *GameConfig {
 	gameConfig := &GameConfig{
 		blackList:     make([]string, 0),
+		groupList:     make(map[string]Group),
 		primaryKeyMap: make(map[string]string),
 	}
 	for _, op := range options {
@@ -280,6 +281,8 @@ func (g *GameConfig) analysisArray(js *jsonStruct) string {
 	}
 	// 获取配置方法
 	funcs := g.getFuncs(js)
+	// 分组配置
+	hasGroup, groupAnalysis := g.getGroupConfig(js)
 	// 额外结构体
 	exStructs := ""
 	for _, exStruct := range js.ExtraStruct {
@@ -287,12 +290,13 @@ func (g *GameConfig) analysisArray(js *jsonStruct) string {
 	}
 	return fmt.Sprintf(arrayTemplate,
 		filepath.Base(g.targetPath), pkg, // 包名、引用部分
-		js.Lower, js.Upper, js.Upper, js.Upper, js.Upper, // Config部分
+		js.Lower, js.Upper, js.Upper, js.Upper, js.Upper, js.Upper, js.Upper, // Config部分
 		js.BaseStruct, js.JsonStruct, // 结构体部分
-		js.Upper, js.Upper, js.Upper, js.Upper, js.FileName, // 注册、结构体名称、文件名称
+		js.Upper, js.Upper, js.Upper, js.Upper, js.FileName, js.Upper, hasGroup, // 注册、结构体名称、文件名称、是否分组
 		js.Upper, js.Lower, js.Lower, js.Lower, // 获取配置
+		js.Upper, js.Lower, js.Lower, js.Lower, // 获取组配置
 		js.Upper, js.Lower, js.Lower, js.Lower, // 全部配置迭代器
-		js.Upper, js.Lower, js.Lower, js.Lower, js.Upper, js.Upper, js.Lower, // 解析Json
+		js.Upper, js.Lower, js.Lower, js.Lower, js.Upper, js.Lower, js.Upper, js.Upper, js.Lower, groupAnalysis, // 解析Json
 		js.Upper, primaryKey, // 主键
 		copyStr,   // 复制
 		funcs,     // 获取配置方法
@@ -390,8 +394,9 @@ func (g *GameConfig) analysisObject(js *jsonStruct) string {
 		filepath.Base(g.targetPath), pkg, // 包名、引用部分
 		js.Lower, js.Upper, js.Upper, js.Upper, js.Upper, // Config部分
 		js.BaseStruct, js.JsonStruct, // 结构体部分
-		js.Upper, js.Upper, js.Upper, js.Upper, js.FileName, // 注册、结构体名称、文件名称
+		js.Upper, js.Upper, js.Upper, js.Upper, js.FileName, js.Upper, // 注册、结构体名称、文件名称、是否分组
 		js.Upper, js.Lower, js.Lower, js.Lower, // 获取配置
+		js.Upper,                                         // 获取组配置
 		js.Upper,                                         // 全部配置迭代器
 		js.Upper, js.Lower, js.Lower, js.Upper, js.Lower, // 解析Json
 		copyStr,   // 复制
@@ -556,6 +561,31 @@ func (g *GameConfig) getFuncs(js *jsonStruct) string {
 		}
 	}
 	return funcs
+}
+
+// 生成分组解析方法
+func (g *GameConfig) getGroupConfig(js *jsonStruct) (hasGroup, groupAnalysis string) {
+	if groupConfig, ok := g.groupList[js.FileName]; ok {
+		hasGroup = "true"
+		template := `
+		if _, ok := %sConfig.groupMap[conf.%s]; !ok {
+			%sConfig.groupMap[conf.%s] = make(map[int64]%s)
+		}
+		%sConfig.groupMap[conf.%s][conf.%s] = conf`
+		groupAnalysis = fmt.Sprintf(template,
+			js.Lower,
+			groupConfig.GroupId,
+			js.Lower,
+			groupConfig.GroupId,
+			js.Upper,
+			js.Lower,
+			groupConfig.GroupId,
+			groupConfig.GroupKey,
+		)
+	} else {
+		hasGroup = "false"
+	}
+	return
 }
 
 // 是否整型（简单类型）

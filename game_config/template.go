@@ -12,12 +12,14 @@ import (
 var (
 	%sConfig = %sManager{
 		configMap: make(map[int64]%s),
+		groupMap:  make(map[int64]map[int64]%s),
 		lock:      &sync.RWMutex{},
 	}
 )
 
 type %sManager struct {
 	configMap map[int64]%s
+	groupMap  map[int64]map[int64]%s
 	lock      *sync.RWMutex
 }
 
@@ -38,11 +40,28 @@ func (c %s) FileName() string {
 	return "%s"
 }
 
+// 是否分组
+func (c %s) HasGroup() bool {
+	return %s
+}
+
 // 获取配置
 func (c %s) GetConfigByKey(id int64) (ICl, bool) {
 	%sConfig.lock.RLock()
 	defer %sConfig.lock.RUnlock()
 	config, ok := %sConfig.configMap[id]
+	return config, ok
+}
+
+// 获取组配置
+func (c %s) GetConfigByGroup(groupId int64, groupKey int64) (ICl, bool) {
+	%sConfig.lock.RLock()
+	defer %sConfig.lock.RUnlock()
+	group, ok := %sConfig.groupMap[groupId]
+	if !ok {
+		return nil, ok
+	}
+	config, ok := group[groupKey]
 	return config, ok
 }
 
@@ -62,10 +81,12 @@ func (c %s) Analysis(content []byte) {
 	%sConfig.lock.Lock()
 	defer %sConfig.lock.Unlock()
 	%sConfig.configMap = make(map[int64]%s)
+	%sConfig.groupMap = make(map[int64]map[int64]%s)
 	temp := []%sJson{}
 	json.Unmarshal(content, &temp)
 	for _, cj := range temp {
-		%sConfig.configMap[cj.getKey()] = cj.copy()
+		conf := cj.copy()
+		%sConfig.configMap[cj.getKey()] = conf%s
 	}
 }
 
@@ -112,11 +133,21 @@ func (c %s) FileName() string {
 	return "%s"
 }
 
+// 是否分组
+func (c %s) HasGroup() bool {
+	return false
+}
+
 // 获取配置
 func (c %s) GetConfigByKey(id int64) (ICl, bool) {
 	%sConfig.lock.RLock()
 	defer %sConfig.lock.RUnlock()
 	return %sConfig.config, true
+}
+
+// 获取组配置（对象配置中不会进行任何操作）
+func (c %s) GetConfigByGroup(groupId int64, groupKey int64) (ICl, bool) {
+	return nil, false
 }
 
 // 全部配置迭代器（对象配置中不会进行任何操作）
@@ -139,7 +170,6 @@ func (c %s) Analysis(content []byte) {
 	managerTemplate = `package %s
 
 import (
-	"fmt"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -163,13 +193,15 @@ type ICl interface {
 	Analysis([]byte)
 	GetConfigByKey(int64) (ICl, bool)
 	IteratorConfigs(f func(key int64, value ICl) bool)
+	HasGroup() bool
+	GetConfigByGroup(int64, int64) (ICl, bool)
 }
 
 func AddCl(cl ICl) {
 	fileNameToCL[cl.FileName()] = cl
 }
 
-// 开始加载配置
+// InitCl 开始加载配置
 func InitCl(dirPath string) {
 	// 读取json文件
 	filepath.WalkDir(dirPath, func(fileDir string, file fs.DirEntry, err error) error {
@@ -188,7 +220,7 @@ func InitCl(dirPath string) {
 	ClearTemp()
 }
 
-// 读取配置文件
+// readFileLoadMap 读取配置文件
 func readFileLoadMap(file fs.DirEntry, fileDir string) {
 	content, err := os.ReadFile(fileDir)
 	if err != nil {
@@ -202,23 +234,33 @@ func readFileLoadMap(file fs.DirEntry, fileDir string) {
 	fileChangeTime[file.Name()] = info.ModTime().Unix()
 }
 
-// 获取单个配置
+// GetGameConfig 获取单个配置
 func GetGameConfig[T ICl](cl T, id int64) (T, bool) {
 	icl, ok := cl.GetConfigByKey(id)
 	if ok {
 		cl = icl.(T)
-	} else {
-		fmt.Println("config not found", cl.StructName(), id)
 	}
 	return cl, ok
 }
 
-// 全部配置迭代器
+// GetGameConfigByGroup 按分组获取单个配置
+func GetGameConfigByGroup[T ICl](cl T, groupId, groupKey int64) (T, bool) {
+	if !cl.HasGroup() {
+		return cl, false
+	}
+	icl, ok := cl.GetConfigByGroup(groupId, groupKey)
+	if ok {
+		cl = icl.(T)
+	}
+	return cl, ok
+}
+
+// IteratorAllConfig 全部配置迭代器
 func IteratorAllConfig[T ICl](cl T, f func(key int64, value ICl) bool) {
 	cl.IteratorConfigs(f)
 }
 
-// 监听配置更改
+// Listen 监听配置更改
 func Listen(dirPath string) {
 	timer.AddTicker(5*time.Minute, func() {
 		// 重载配置
@@ -231,12 +273,12 @@ func Listen(dirPath string) {
 	})
 }
 
-// 清除缓存
+// ClearTemp 清除缓存
 func ClearTemp() {
 	loadTmpJsonMap = make(map[string][]byte, 0)
 }
 
-// 重载配置
+// ReloadConfig 重载配置
 func ReloadConfig(file fs.DirEntry, fileDir string) {
 	info, err := file.Info()
 	if err != nil {

@@ -29,6 +29,7 @@ type GameConfig struct {
 	filePath      string
 	targetPath    string
 	blackList     []string
+	groupList     map[string]Group
 	primaryKeyMap map[string]string
 }
 
@@ -50,4 +51,16 @@ type key struct {
 	KindType   string
 	BaseStruct string
 	JsonStruct string
+}
+
+// 默认主键
+type Key struct {
+	JsonFileName string
+	PrimaryKey   string
+}
+
+type Group struct {
+	JsonFileName string
+	GroupId      string
+	GroupKey     string
 }
