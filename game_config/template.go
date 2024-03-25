@@ -170,6 +170,7 @@ func (c %s) Analysis(content []byte) {
 	managerTemplate = `package %s
 
 import (
+	"fmt"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -209,9 +210,11 @@ func InitCl(dirPath string) {
 		return err
 	})
 	// 解析Json
-	for fileName, content := range loadTmpJsonMap {
-		if icl, ok := fileNameToCL[fileName]; ok {
+	for fileName, icl := range fileNameToCL {
+		if content, ok := loadTmpJsonMap[fileName]; ok {
 			icl.Analysis(content)
+		} else {
+			panic(fmt.Errorf("config file not found, file name:%%s", icl.FileName()))
 		}
 	}
 	// 监听配置更改
