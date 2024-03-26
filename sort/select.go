@@ -7,8 +7,8 @@ import "github.com/kennycch/gotools/general"
 array：原数组
 newArray：排序后数组
 */
-func Select[T general.Number](array []T, sortType SortType) (newArray []T) {
-	newArray = make([]T, len(array))
+func Select[V any, T general.Number](array []V, sortType SortType, sortValue func(vlaue V) T) (newArray []V) {
+	newArray = make([]V, len(array))
 	copy(newArray, array)
 	// 长度少于2直接返回
 	if len(newArray) < 2 {
@@ -19,8 +19,8 @@ func Select[T general.Number](array []T, sortType SortType) (newArray []T) {
 		minIndex := i
 		// 找出最后面比自己小/大的元素下标，与自己对换
 		for j := i + 1; j < len(newArray); j++ {
-			if (newArray[minIndex] > newArray[j] && sortType == ASC) ||
-				(newArray[minIndex] < newArray[j] && sortType == DESC) {
+			if (sortValue(newArray[minIndex]) > sortValue(newArray[j]) && sortType == ASC) ||
+				(sortValue(newArray[minIndex]) < sortValue(newArray[j]) && sortType == DESC) {
 				minIndex = j
 			}
 		}

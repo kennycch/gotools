@@ -7,14 +7,14 @@ import "github.com/kennycch/gotools/general"
 array：原数组
 newArray：排序后数组
 */
-func Merge[T general.Number](array []T, sortType SortType) (newArray []T) {
-	newArray = make([]T, len(array))
+func Merge[V any, T general.Number](array []V, sortType SortType, sortValue func(vlaue V) T) (newArray []V) {
+	newArray = make([]V, len(array))
 	copy(newArray, array)
 	// 长度少于2直接返回
 	if len(newArray) < 2 {
 		return
 	}
-	m := &mergeSort[T]{
+	m := &mergeSort[V, T]{
 		array:    newArray,
 		sortType: sortType,
 	}
@@ -23,13 +23,14 @@ func Merge[T general.Number](array []T, sortType SortType) (newArray []T) {
 	return
 }
 
-type mergeSort[T general.Number] struct {
-	array    []T      // 要排序的数组
-	sortType SortType // 排序类型
+type mergeSort[V any, T general.Number] struct {
+	array     []V      // 要排序的数组
+	sortType  SortType // 排序类型
+	sortValue func(V) T
 }
 
 // 拆分执行
-func (m *mergeSort[T]) splitAction(start, end int) {
+func (m *mergeSort[V, T]) splitAction(start, end int) {
 	if start >= end {
 		return
 	}
@@ -42,14 +43,14 @@ func (m *mergeSort[T]) splitAction(start, end int) {
 }
 
 // 合并处理
-func (m *mergeSort[T]) mergeAcion(start, middle, end int) {
+func (m *mergeSort[V, T]) mergeAcion(start, middle, end int) {
 	// 创建下标与临时数组
 	leftIndex, rightIndex, tempIndex := start, middle+1, 0
-	temp := make([]T, 1+end-start)
+	temp := make([]V, 1+end-start)
 	// 取左右下标中较小/大的放入临时数组
 	for leftIndex <= middle && rightIndex <= end {
-		if (m.array[leftIndex] <= m.array[rightIndex] && m.sortType == ASC) ||
-			(m.array[leftIndex] >= m.array[rightIndex] && m.sortType == DESC) {
+		if (m.sortValue(m.array[leftIndex]) <= m.sortValue(m.array[rightIndex]) && m.sortType == ASC) ||
+			(m.sortValue(m.array[leftIndex]) >= m.sortValue(m.array[rightIndex]) && m.sortType == DESC) {
 			temp[tempIndex] = m.array[leftIndex]
 			leftIndex++
 			tempIndex++

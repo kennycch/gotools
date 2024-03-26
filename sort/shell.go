@@ -7,8 +7,8 @@ import "github.com/kennycch/gotools/general"
 array：原数组
 newArray：排序后数组
 */
-func Shell[T general.Number](array []T, sortType SortType) (newArray []T) {
-	newArray = make([]T, len(array))
+func Shell[V any, T general.Number](array []V, sortType SortType, sortValue func(vlaue V) T) (newArray []V) {
+	newArray = make([]V, len(array))
 	copy(newArray, array)
 	// 长度少于2直接返回
 	if len(newArray) < 2 {
@@ -19,8 +19,8 @@ func Shell[T general.Number](array []T, sortType SortType) (newArray []T) {
 		// 对比基数及基数倍数下标的元素
 		for i := step; i < len(newArray); i += step {
 			for j := i - step; j >= 0; j -= step {
-				if (newArray[j] > newArray[j+step] && sortType == ASC) ||
-					(newArray[j] < newArray[j+step] && sortType == DESC) {
+				if (sortValue(newArray[j]) > sortValue(newArray[j+step]) && sortType == ASC) ||
+					(sortValue(newArray[j]) < sortValue(newArray[j+step]) && sortType == DESC) {
 					newArray[j], newArray[j+step] = newArray[j+step], newArray[j]
 				} else {
 					break

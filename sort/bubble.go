@@ -7,8 +7,8 @@ import "github.com/kennycch/gotools/general"
 array：原数组
 newArray：排序后数组
 */
-func Bubble[T general.Number](array []T, sortType SortType) (newArray []T) {
-	newArray = make([]T, len(array))
+func Bubble[V any, T general.Number](array []V, sortType SortType, sortValue func(vlaue V) T) (newArray []V) {
+	newArray = make([]V, len(array))
 	copy(newArray, array)
 	// 长度少于2直接返回
 	if len(newArray) < 2 {
@@ -20,8 +20,8 @@ func Bubble[T general.Number](array []T, sortType SortType) (newArray []T) {
 		isChanged := false
 		for j := 0; j < len(newArray)-1-i; j++ {
 			// 根据排序类型判断对比条件
-			if (newArray[j] > newArray[j+1] && sortType == ASC) ||
-				(newArray[j] < newArray[j+1] && sortType == DESC) {
+			if (sortValue(newArray[j]) > sortValue(newArray[j+1]) && sortType == ASC) ||
+				(sortValue(newArray[j]) < sortValue(newArray[j+1]) && sortType == DESC) {
 				newArray[j], newArray[j+1] = newArray[j+1], newArray[j]
 				isChanged = true
 			}

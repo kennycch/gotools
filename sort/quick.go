@@ -7,20 +7,20 @@ import "github.com/kennycch/gotools/general"
 array：原数组
 newArray：排序后数组
 */
-func Quick[T general.Number](array []T, sortType SortType) (newArray []T) {
-	newArray = make([]T, len(array))
+func Quick[V any, T general.Number](array []V, sortType SortType, sortValue func(vlaue V) T) (newArray []V) {
+	newArray = make([]V, len(array))
 	copy(newArray, array)
 	// 长度少于2直接返回
 	if len(newArray) < 2 {
 		return
 	}
 	// 调用递归函数
-	newArray = quickAction[T](newArray, sortType, 0, len(newArray)-1)
+	newArray = quickAction[V, T](newArray, sortType, 0, len(newArray)-1, sortValue)
 	return
 }
 
 // 递归函数
-func quickAction[T general.Number](array []T, sortType SortType, left, right int) []T {
+func quickAction[V any, T general.Number](array []V, sortType SortType, left, right int, sortValue func(vlaue V) T) []V {
 	l := left
 	r := right
 	// 获取中轴
@@ -29,17 +29,17 @@ func quickAction[T general.Number](array []T, sortType SortType, left, right int
 	for l < r {
 		// 找到中轴两侧不符合条件的元素
 		if sortType == ASC { // 升序
-			for array[l] < pivot {
+			for sortValue(array[l]) < sortValue(pivot) {
 				l++
 			}
-			for array[r] > pivot {
+			for sortValue(array[r]) > sortValue(pivot) {
 				r--
 			}
 		} else { // 降序
-			for array[l] > pivot {
+			for sortValue(array[l]) > sortValue(pivot) {
 				l++
 			}
-			for array[r] < pivot {
+			for sortValue(array[r]) < sortValue(pivot) {
 				r--
 			}
 		}
@@ -50,10 +50,10 @@ func quickAction[T general.Number](array []T, sortType SortType, left, right int
 		// 对调元素
 		array[l], array[r] = array[r], array[l]
 		// 优化算法，减少重复遍历
-		if array[l] == pivot {
+		if sortValue(array[l]) == sortValue(pivot) {
 			r--
 		}
-		if array[r] == pivot {
+		if sortValue(array[r]) == sortValue(pivot) {
 			l++
 		}
 	}
@@ -64,11 +64,11 @@ func quickAction[T general.Number](array []T, sortType SortType, left, right int
 	}
 	// 开始左递归
 	if left < r {
-		array = quickAction[T](array, sortType, left, r)
+		array = quickAction[V, T](array, sortType, left, r, sortValue)
 	}
 	// 开始右递归
 	if right > l {
-		array = quickAction[T](array, sortType, l, right)
+		array = quickAction[V, T](array, sortType, l, right, sortValue)
 	}
 	return array
 }
