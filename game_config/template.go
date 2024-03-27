@@ -11,15 +11,15 @@ import (
 
 var (
 	%sConfig = %sManager{
-		configMap: make(map[int64]%s),
-		groupMap:  make(map[int64]map[int64]%s),
+		configMap: make(map[int32]%s),
+		groupMap:  make(map[int32]map[int32]%s),
 		lock:      &sync.RWMutex{},
 	}
 )
 
 type %sManager struct {
-	configMap map[int64]%s
-	groupMap  map[int64]map[int64]%s
+	configMap map[int32]%s
+	groupMap  map[int32]map[int32]%s
 	lock      *sync.RWMutex
 }
 
@@ -30,31 +30,31 @@ func init() {
 	AddCl(%s{})
 }
 
-// 结构体名称
-func (c %s) StructName() string {
+// structName 结构体名称
+func (c %s) structName() string {
 	return "%s"
 }
 
-// 文件名称
-func (c %s) FileName() string {
+// fileName 文件名称
+func (c %s) fileName() string {
 	return "%s"
 }
 
-// 是否分组
-func (c %s) HasGroup() bool {
+// hasGroup 是否分组
+func (c %s) hasGroup() bool {
 	return %s
 }
 
-// 获取配置
-func (c %s) GetConfigByKey(id int64) (ICl, bool) {
+// getConfigByKey 获取配置
+func (c %s) getConfigByKey(id int32) (ICl, bool) {
 	%sConfig.lock.RLock()
 	defer %sConfig.lock.RUnlock()
 	config, ok := %sConfig.configMap[id]
 	return config, ok
 }
 
-// 获取组配置
-func (c %s) GetConfigByGroup(groupId int64, groupKey int64) (ICl, bool) {
+// getConfigByGroup 获取组配置
+func (c %s) getConfigByGroup(groupId int32, groupKey int32) (ICl, bool) {
 	%sConfig.lock.RLock()
 	defer %sConfig.lock.RUnlock()
 	group, ok := %sConfig.groupMap[groupId]
@@ -65,8 +65,8 @@ func (c %s) GetConfigByGroup(groupId int64, groupKey int64) (ICl, bool) {
 	return config, ok
 }
 
-// 全部配置迭代器
-func (c %s) IteratorConfigs(f func(key int64, value ICl) bool) {
+// iteratorConfigs 全部配置迭代器
+func (c %s) iteratorConfigs(f func(key int32, value ICl) bool) {
 	%sConfig.lock.RLock()
 	defer %sConfig.lock.RUnlock()
 	for k, v := range %sConfig.configMap {
@@ -76,12 +76,12 @@ func (c %s) IteratorConfigs(f func(key int64, value ICl) bool) {
 	}
 }
 
-// 解析Json
-func (c %s) Analysis(content []byte) {
+// analysis 解析Json
+func (c %s) analysis(content []byte) {
 	%sConfig.lock.Lock()
 	defer %sConfig.lock.Unlock()
-	%sConfig.configMap = make(map[int64]%s)
-	%sConfig.groupMap = make(map[int64]map[int64]%s)
+	%sConfig.configMap = make(map[int32]%s)
+	%sConfig.groupMap = make(map[int32]map[int32]%s)
 	temp := []%sJson{}
 	json.Unmarshal(content, &temp)
 	for _, cj := range temp {
@@ -90,7 +90,7 @@ func (c %s) Analysis(content []byte) {
 	}
 }
 
-func (cj %sJson) getKey() int64 {
+func (cj %sJson) getKey() int32 {
 	return cj.%s
 }
 
@@ -123,40 +123,40 @@ func init() {
 	AddCl(%s{})
 }
 
-// 结构体名称
-func (c %s) StructName() string {
+// structName 结构体名称
+func (c %s) structName() string {
 	return "%s"
 }
 
-// 文件名称
-func (c %s) FileName() string {
+// fileName 文件名称
+func (c %s) fileName() string {
 	return "%s"
 }
 
-// 是否分组
-func (c %s) HasGroup() bool {
+// hasGroup 是否分组
+func (c %s) hasGroup() bool {
 	return false
 }
 
-// 获取配置
-func (c %s) GetConfigByKey(id int64) (ICl, bool) {
+// getConfigByKey 获取配置
+func (c %s) getConfigByKey(id int32) (ICl, bool) {
 	%sConfig.lock.RLock()
 	defer %sConfig.lock.RUnlock()
 	return %sConfig.config, true
 }
 
-// 获取组配置（对象配置中不会进行任何操作）
-func (c %s) GetConfigByGroup(groupId int64, groupKey int64) (ICl, bool) {
+// getConfigByGroup 获取组配置（对象配置中不会进行任何操作）
+func (c %s) getConfigByGroup(groupId int32, groupKey int32) (ICl, bool) {
 	return nil, false
 }
 
-// 全部配置迭代器（对象配置中不会进行任何操作）
-func (c %s) IteratorConfigs(f func(key int64, value ICl) bool) {
+// iteratorConfigs 全部配置迭代器（对象配置中不会进行任何操作）
+func (c %s) iteratorConfigs(f func(key int32, value ICl) bool) {
 	
 }
 
-// 解析Json
-func (c %s) Analysis(content []byte) {
+// analysis 解析Json
+func (c %s) analysis(content []byte) {
 	%sConfig.lock.Lock()
 	defer %sConfig.lock.Unlock()
 	temp := %sJson{}
@@ -189,17 +189,17 @@ var (
 )
 
 type ICl interface {
-	FileName() string
-	StructName() string
-	Analysis([]byte)
-	GetConfigByKey(int64) (ICl, bool)
-	IteratorConfigs(f func(key int64, value ICl) bool)
-	HasGroup() bool
-	GetConfigByGroup(int64, int64) (ICl, bool)
+	fileName() string
+	structName() string
+	analysis([]byte)
+	getConfigByKey(int32) (ICl, bool)
+	iteratorConfigs(f func(key int32, value ICl) bool)
+	hasGroup() bool
+	getConfigByGroup(int32, int32) (ICl, bool)
 }
 
 func AddCl(cl ICl) {
-	fileNameToCL[cl.FileName()] = cl
+	fileNameToCL[cl.fileName()] = cl
 }
 
 // InitCl 开始加载配置
@@ -212,9 +212,9 @@ func InitCl(dirPath string) {
 	// 解析Json
 	for fileName, icl := range fileNameToCL {
 		if content, ok := loadTmpJsonMap[fileName]; ok {
-			icl.Analysis(content)
+			icl.analysis(content)
 		} else {
-			panic(fmt.Errorf("config file not found, file name:%%s", icl.FileName()))
+			panic(fmt.Errorf("config file not found, file name:%%s", icl.fileName()))
 		}
 	}
 	// 监听配置更改
@@ -238,8 +238,8 @@ func readFileLoadMap(file fs.DirEntry, fileDir string) {
 }
 
 // GetGameConfig 获取单个配置
-func GetGameConfig[T ICl](cl T, id int64) (T, bool) {
-	icl, ok := cl.GetConfigByKey(id)
+func GetGameConfig[T ICl](cl T, id int32) (T, bool) {
+	icl, ok := cl.getConfigByKey(id)
 	if ok {
 		cl = icl.(T)
 	}
@@ -247,11 +247,11 @@ func GetGameConfig[T ICl](cl T, id int64) (T, bool) {
 }
 
 // GetGameConfigByGroup 按分组获取单个配置
-func GetGameConfigByGroup[T ICl](cl T, groupId, groupKey int64) (T, bool) {
-	if !cl.HasGroup() {
+func GetGameConfigByGroup[T ICl](cl T, groupId, groupKey int32) (T, bool) {
+	if !cl.hasGroup() {
 		return cl, false
 	}
-	icl, ok := cl.GetConfigByGroup(groupId, groupKey)
+	icl, ok := cl.getConfigByGroup(groupId, groupKey)
 	if ok {
 		cl = icl.(T)
 	}
@@ -259,8 +259,8 @@ func GetGameConfigByGroup[T ICl](cl T, groupId, groupKey int64) (T, bool) {
 }
 
 // IteratorAllConfig 全部配置迭代器
-func IteratorAllConfig[T ICl](cl T, f func(key int64, value ICl) bool) {
-	cl.IteratorConfigs(f)
+func IteratorAllConfig[T ICl](cl T, f func(key int32, value ICl) bool) {
+	cl.iteratorConfigs(f)
 }
 
 // Listen 监听配置更改
@@ -269,7 +269,7 @@ func Listen(dirPath string) {
 		// 重载配置
 		filepath.WalkDir(".", func(dirPath string, file fs.DirEntry, err error) error {
 			if _, ok := fileNameToCL[file.Name()]; ok {
-				ReloadConfig(file, dirPath)
+				reloadConfig(file, dirPath)
 			}
 			return err
 		})
@@ -281,8 +281,8 @@ func ClearTemp() {
 	loadTmpJsonMap = make(map[string][]byte, 0)
 }
 
-// ReloadConfig 重载配置
-func ReloadConfig(file fs.DirEntry, fileDir string) {
+// reloadConfig 重载配置
+func reloadConfig(file fs.DirEntry, fileDir string) {
 	info, err := file.Info()
 	if err != nil {
 		return
@@ -292,7 +292,7 @@ func ReloadConfig(file fs.DirEntry, fileDir string) {
 	}
 	readFileLoadMap(file, fileDir)
 	if icl, ok := fileNameToCL[file.Name()]; ok {
-		icl.Analysis(loadTmpJsonMap[file.Name()])
+		icl.analysis(loadTmpJsonMap[file.Name()])
 	}
 }
 	
