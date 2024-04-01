@@ -254,24 +254,14 @@ func (g *GameConfig) analysisArray(js *jsonStruct) string {
 					JsonStruct: jsonType,
 				}
 				js.Keys = append(js.Keys, jsKey)
-				// case reflect.Map: // 对象
-				// 	valueType := handleExtraStruct(array, js, k, v)
-				// 	if valueType == "" {
-				// 		continue
-				// 	}
-				// 	js.BaseStruct += fmt.Sprintf("	%s %s\n", lower, valueType)
-				// 	js.JsonStruct += fmt.Sprintf("	%s %s `json:\"%s\"`\n", upper, valueType, k)
-				// 	jsKey := key{
-				// 		Upper:    upper,
-				// 		Lower:    lower,
-				// 		KindType: valueType,
-				// 	}
-				// 	js.Keys = append(js.Keys, jsKey)
 			}
 		}
 	}
 	js.BaseStruct += "}\n"
 	js.JsonStruct += "}\n"
+	// 格式化结构体
+	js.BaseStruct = baseStructFormat(js.BaseStruct)
+	js.JsonStruct = jsonStructFormat(js.JsonStruct)
 	// 复制方法
 	copyStr := g.getCopy(js)
 	// 引用部分
@@ -376,6 +366,9 @@ func (g *GameConfig) analysisObject(js *jsonStruct) string {
 	}
 	js.BaseStruct += "}\n"
 	js.JsonStruct += "}\n"
+	// 格式化结构体
+	js.BaseStruct = baseStructFormat(js.BaseStruct)
+	js.JsonStruct = jsonStructFormat(js.JsonStruct)
 	// 复制方法
 	copyStr := g.getCopy(js)
 	// 引用部分
@@ -407,25 +400,28 @@ func (g *GameConfig) analysisObject(js *jsonStruct) string {
 
 // 生成复制内容
 func (g *GameConfig) getCopy(js *jsonStruct) string {
-	copyStr := fmt.Sprintf("func (cj %sJson) copy() %s{\n	c := %s{\n", js.Upper, js.Upper, js.Upper)
+	copyStr := fmt.Sprintf("func (cj %sJson) copy() %s {\n	c := %s{\n", js.Upper, js.Upper, js.Upper)
 	arrayStructs := []key{}
+	fields := ""
 	for _, k := range js.Keys {
 		if string(k.KindType[0]) == "[" {
 			if general.InArray(normalArray, k.KindType) { // 一唯数组
-				copyStr += fmt.Sprintf("		%s: general.ArrayCopy(cj.%s),\n", k.Lower, k.Upper)
+				fields += fmt.Sprintf("		%s: general.ArrayCopy(cj.%s),\n", k.Lower, k.Upper)
 			} else { // 数组结构体
 				arrayStructs = append(arrayStructs, k)
 			}
 		} else {
-			copyStr += fmt.Sprintf("		%s: cj.%s,\n", k.Lower, k.Upper)
+			fields += fmt.Sprintf("		%s: cj.%s,\n", k.Lower, k.Upper)
 		}
 	}
-	copyStr += "	}\n"
+	fields = baseStructFormat(fields)
+	fields += "	}\n"
 	// 数组结构体
 	for _, k := range arrayStructs {
-		copyStr += fmt.Sprintf("	%s := make([]%s, 0)\n	for _, ex := range cj.%s {\n		%s = append(%s, ex.copy())\n	}\n	c.%s = %s\n",
+		fields += fmt.Sprintf("	%s := make([]%s, 0)\n	for _, ex := range cj.%s {\n		%s = append(%s, ex.copy())\n	}\n	c.%s = %s\n",
 			k.Lower, js.Upper+k.Upper, k.Upper, k.Lower, k.Lower, k.Lower, k.Lower)
 	}
+	copyStr += fields
 	copyStr += "	return c\n}"
 	return copyStr
 }
@@ -522,25 +518,13 @@ func (g *GameConfig) handleExtraStruct(array []map[string]interface{}, js *jsonS
 				KindType: "string",
 			}
 			exJs.Keys = append(exJs.Keys, jsKey)
-			// case reflect.Array, reflect.Slice: // 数组
-			// 	valueType := handleArray(array, exJs, ke, val)
-			// 	if valueType == "" {
-			// 		continue
-			// 	}
-			// 	exJs.HasArray = true
-			// 	exJs.BaseStruct += fmt.Sprintf("	%s %s\n", lower, valueType)
-			// 	exJs.JsonStruct += fmt.Sprintf("	%s %s `json:\"%s\"`\n", upper, valueType, k)
-			// 	jsKey := key{
-			// 		Upper:    upper,
-			// 		Lower:    lower,
-			// 		KindType: valueType,
-			// 	}
-			// 	exJs.Keys = append(exJs.Keys, jsKey)
 		}
-
 	}
 	exJs.BaseStruct += "}\n"
 	exJs.JsonStruct += "}\n"
+	// 格式化结构体
+	exJs.BaseStruct = baseStructFormat(exJs.BaseStruct)
+	exJs.JsonStruct = jsonStructFormat(exJs.JsonStruct)
 	// 生成获取值方法
 	funcs := g.getFuncs(exJs)
 	// 生成复制方法
@@ -637,4 +621,93 @@ label:
 		}
 	}
 	return flag
+}
+
+// 结构体格式化
+func baseStructFormat(baseStruct string) string {
+	arr := strings.Split(baseStruct, "\n")
+	// 统计字段最大长度
+	maxLen := 0
+	for _, str := range arr {
+		if len(str) == 0 || string(str[0]) != "\t" {
+			continue
+		}
+		field := strings.Split(str, " ")
+		if maxLen < len(field[0]) {
+			maxLen = len(field[0])
+		}
+	}
+	// 补全字段空格符
+	for index, str := range arr {
+		if len(str) == 0 || string(str[0]) != "\t" {
+			continue
+		}
+		fields := strings.Split(str, " ")
+		length := len(fields[0])
+		if length < maxLen {
+			for i := 0; i < maxLen-length; i++ {
+				fields[0] += " "
+			}
+		}
+		arr[index] = strings.Join(fields, " ")
+	}
+	return strings.Join(arr, "\n")
+}
+
+// json结构体格式化
+func jsonStructFormat(jsonStruct string) string {
+	arr := strings.Split(jsonStruct, "\n")
+	// 统计字段最大长度
+	maxLen := 0
+	for _, str := range arr {
+		if len(str) == 0 || string(str[0]) != "\t" {
+			continue
+		}
+		field := strings.Split(str, " ")
+		if maxLen < len(field[0]) {
+			maxLen = len(field[0])
+		}
+	}
+	// 补全字段空格符
+	for index, str := range arr {
+		if len(str) == 0 || string(str[0]) != "\t" {
+			continue
+		}
+		fields := strings.Split(str, " ")
+		length := len(fields[0])
+		if length < maxLen {
+			for i := 0; i < maxLen-length; i++ {
+				fields[0] += " "
+			}
+		}
+		arr[index] = strings.Join(fields, " ")
+	}
+	// 统计字段加类型最大长度
+	maxLenJson := 0
+	for _, str := range arr {
+		if len(str) == 0 || string(str[0]) != "\t" {
+			continue
+		}
+		foot := str[maxLen+1:]
+		fields := strings.Split(foot, " ")
+		if maxLenJson < len(fields[0]) {
+			maxLenJson = len(fields[0])
+		}
+	}
+	for index, str := range arr {
+		if len(str) == 0 || string(str[0]) != "\t" {
+			continue
+		}
+		head := str[:maxLen+1]
+		foot := str[maxLen+1:]
+		fields := strings.Split(foot, " ")
+		length := len(fields[0])
+		if length < maxLenJson {
+			for i := 0; i < maxLenJson-length; i++ {
+				fields[0] += " "
+			}
+		}
+		arr[index] = head + strings.Join(fields, " ")
+	}
+	return strings.Join(arr, "\n")
 }

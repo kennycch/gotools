@@ -152,7 +152,7 @@ func (c %s) getConfigByGroup(groupId int32, groupKey int32) (ICl, bool) {
 
 // iteratorConfigs 全部配置迭代器（对象配置中不会进行任何操作）
 func (c %s) iteratorConfigs(f func(key int32, value ICl) bool) {
-	
+
 }
 
 // analysis 解析Json
@@ -295,6 +295,5 @@ func reloadConfig(file fs.DirEntry, fileDir string) {
 		icl.analysis(loadTmpJsonMap[file.Name()])
 	}
 }
-	
 `
 )
