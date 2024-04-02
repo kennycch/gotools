@@ -300,7 +300,13 @@ func (g *GameConfig) analysisObject(js *jsonStruct) string {
 	if err := json.Unmarshal(js.Content, &mapping); err != nil {
 		return ""
 	}
-	for k, v := range mapping {
+	keys := []string{}
+	for k := range mapping {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	for _, k := range keys {
+		v := mapping[k]
 		if v == nil {
 			continue
 		}
