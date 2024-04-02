@@ -479,7 +479,12 @@ func (g *GameConfig) handleExtraStruct(array []map[string]interface{}, js *jsonS
 	valueType, jsonType := exJs.Upper, exJs.Upper+"Json"
 	exJs.BaseStruct = fmt.Sprintf("type %s struct {\n", exJs.Upper)
 	exJs.JsonStruct = fmt.Sprintf("type %sJson struct {\n", exJs.Upper)
-	for ke, val := range mapping {
+	keys := []string{}
+	for k := range mapping {
+		keys = append(keys, k)
+	}
+	for _, ke := range keys {
+		val := mapping[ke]
 		if val == nil {
 			continue
 		}
