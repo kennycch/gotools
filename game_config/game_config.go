@@ -483,6 +483,7 @@ func (g *GameConfig) handleExtraStruct(array []map[string]interface{}, js *jsonS
 	for k := range mapping {
 		keys = append(keys, k)
 	}
+	sort.Strings(keys)
 	for _, ke := range keys {
 		val := mapping[ke]
 		if val == nil {
