@@ -490,6 +490,10 @@ func (g *GameConfig) handleExtraStruct(array []map[string]interface{}, js *jsonS
 			continue
 		}
 		upper, lower := general.HumpFormat(ke, true), general.HumpFormat(ke, false)
+		if general.InArray(disableKey, lower) {
+			upper += "Dk"
+			lower += "Dk"
+		}
 		vType := reflect.TypeOf(val).Kind()
 		switch vType {
 		case reflect.Bool: // 布尔
