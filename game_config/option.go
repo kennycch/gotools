@@ -1,5 +1,7 @@
 package game_config
 
+import "github.com/kennycch/gotools/general"
+
 // 目录路径
 func SetDir(dirPath string) option {
 	return func(g *GameConfig) {
@@ -41,6 +43,13 @@ func SetPrimaryKey(keys ...Key) option {
 func SetGroup(groups ...Group) option {
 	return func(g *GameConfig) {
 		for _, group := range groups {
+			// 过滤禁用键
+			if general.InArray(disableKey, group.GroupId) {
+				group.GroupId += "Dk"
+			}
+			if general.InArray(disableKey, group.GroupKey) {
+				group.GroupKey += "Dk"
+			}
 			g.groupList[group.JsonFileName] = group
 		}
 	}
