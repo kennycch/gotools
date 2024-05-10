@@ -2,12 +2,8 @@ package sort
 
 import "github.com/kennycch/gotools/general"
 
-/*
-希尔排序
-array：原数组
-newArray：排序后数组
-*/
-func Shell[V any, T general.Number](array []V, sortType SortType, sortValue func(vlaue V) T) (newArray []V) {
+// Shell 希尔排序
+func Shell[V any, T general.Number](array []V, sortType SortType, sortValue func(value V) T) (newArray []V) {
 	newArray = make([]V, len(array))
 	copy(newArray, array)
 	// 长度少于2直接返回

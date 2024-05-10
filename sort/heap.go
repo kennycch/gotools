@@ -2,12 +2,8 @@ package sort
 
 import "github.com/kennycch/gotools/general"
 
-/*
-堆排序
-array：原数组
-newArray：排序后数组
-*/
-func Heap[V any, T general.Number](array []V, sortType SortType, sortValue func(vlaue V) T) (newArray []V) {
+// Heap 堆排序
+func Heap[V any, T general.Number](array []V, sortType SortType, sortValue func(value V) T) (newArray []V) {
 	newArray = make([]V, len(array))
 	copy(newArray, array)
 	// 长度少于2直接返回
@@ -30,18 +26,15 @@ func Heap[V any, T general.Number](array []V, sortType SortType, sortValue func(
 type heapSort[V any, T general.Number] struct {
 	sortType SortType // 排序类型，决定是用大根堆还是小根堆
 	size     int      // 堆的大小
-	/*
-		使用数组来模拟树
-		假设某个节点下标为i
-		父节点为(i - 1) / 2
-		两个子节点分别为i * 2 + 1, i * 2 + 2
-	*/
+	// 使用数组来模拟树
+	// 假设某个节点下标为i
+	// 父节点为(i - 1) / 2
+	// 两个子节点分别为i * 2 + 1, i * 2 + 2
 	array     []V
 	sortValue func(V) T
 }
 
-// 创建堆
-func newHeap[V any, T general.Number](array []V, sortType SortType, sortValue func(vlaue V) T) *heapSort[V, T] {
+func newHeap[V any, T general.Number](array []V, sortType SortType, sortValue func(value V) T) *heapSort[V, T] {
 	return &heapSort[V, T]{
 		sortType:  sortType,
 		array:     make([]V, len(array)),

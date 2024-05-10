@@ -2,12 +2,8 @@ package sort
 
 import "github.com/kennycch/gotools/general"
 
-/*
-归并排序
-array：原数组
-newArray：排序后数组
-*/
-func Merge[V any, T general.Number](array []V, sortType SortType, sortValue func(vlaue V) T) (newArray []V) {
+// Merge 归并排序
+func Merge[V any, T general.Number](array []V, sortType SortType, sortValue func(value V) T) (newArray []V) {
 	newArray = make([]V, len(array))
 	copy(newArray, array)
 	// 长度少于2直接返回
@@ -29,7 +25,6 @@ type mergeSort[V any, T general.Number] struct {
 	sortValue func(V) T
 }
 
-// 拆分执行
 func (m *mergeSort[V, T]) splitAction(start, end int) {
 	if start >= end {
 		return
@@ -42,7 +37,6 @@ func (m *mergeSort[V, T]) splitAction(start, end int) {
 	m.mergeAcion(start, middle, end)
 }
 
-// 合并处理
 func (m *mergeSort[V, T]) mergeAcion(start, middle, end int) {
 	// 创建下标与临时数组
 	leftIndex, rightIndex, tempIndex := start, middle+1, 0

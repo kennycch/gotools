@@ -2,12 +2,8 @@ package sort
 
 import "github.com/kennycch/gotools/general"
 
-/*
-快速排序
-array：原数组
-newArray：排序后数组
-*/
-func Quick[V any, T general.Number](array []V, sortType SortType, sortValue func(vlaue V) T) (newArray []V) {
+// Quick 快速排序
+func Quick[V any, T general.Number](array []V, sortType SortType, sortValue func(value V) T) (newArray []V) {
 	newArray = make([]V, len(array))
 	copy(newArray, array)
 	// 长度少于2直接返回
@@ -19,8 +15,7 @@ func Quick[V any, T general.Number](array []V, sortType SortType, sortValue func
 	return
 }
 
-// 递归函数
-func quickAction[V any, T general.Number](array []V, sortType SortType, left, right int, sortValue func(vlaue V) T) []V {
+func quickAction[V any, T general.Number](array []V, sortType SortType, left, right int, sortValue func(value V) T) []V {
 	l := left
 	r := right
 	// 获取中轴

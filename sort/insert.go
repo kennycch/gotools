@@ -2,12 +2,8 @@ package sort
 
 import "github.com/kennycch/gotools/general"
 
-/*
-插入排序
-array：原数组
-newArray：排序后数组
-*/
-func Insert[V any, T general.Number](array []V, sortType SortType, sortValue func(vlaue V) T) (newArray []V) {
+// Insert 插入排序
+func Insert[V any, T general.Number](array []V, sortType SortType, sortValue func(value V) T) (newArray []V) {
 	newArray = make([]V, len(array))
 	copy(newArray, array)
 	// 长度少于2直接返回
