@@ -11,15 +11,15 @@ import (
 
 var (
 	%sConfig = %sManager{
-		configMap: make(map[int32]%s),
-		groupMap:  make(map[int32]map[int32]%s),
+		configMap: make(map[int64]%s),
+		groupMap:  make(map[int64]map[int64]%s),
 		lock:      &sync.RWMutex{},
 	}
 )
 
 type %sManager struct {
-	configMap map[int32]%s
-	groupMap  map[int32]map[int32]%s
+	configMap map[int64]%s
+	groupMap  map[int64]map[int64]%s
 	lock      *sync.RWMutex
 }
 
@@ -46,7 +46,7 @@ func (c %s) hasGroup() bool {
 }
 
 // getConfigByKey 获取配置
-func (c %s) getConfigByKey(id int32) (ICl, bool) {
+func (c %s) getConfigByKey(id int64) (ICl, bool) {
 	%sConfig.lock.RLock()
 	defer %sConfig.lock.RUnlock()
 	config, ok := %sConfig.configMap[id]
@@ -54,7 +54,7 @@ func (c %s) getConfigByKey(id int32) (ICl, bool) {
 }
 
 // getConfigByGroup 获取组配置
-func (c %s) getConfigByGroup(groupId int32, groupKey int32) (ICl, bool) {
+func (c %s) getConfigByGroup(groupId int64, groupKey int64) (ICl, bool) {
 	%sConfig.lock.RLock()
 	defer %sConfig.lock.RUnlock()
 	group, ok := %sConfig.groupMap[groupId]
@@ -66,7 +66,7 @@ func (c %s) getConfigByGroup(groupId int32, groupKey int32) (ICl, bool) {
 }
 
 // iteratorConfigs 全部配置迭代器
-func (c %s) iteratorConfigs(f func(key int32, value ICl) bool) {
+func (c %s) iteratorConfigs(f func(key int64, value ICl) bool) {
 	%sConfig.lock.RLock()
 	defer %sConfig.lock.RUnlock()
 	for k, v := range %sConfig.configMap {
@@ -80,8 +80,8 @@ func (c %s) iteratorConfigs(f func(key int32, value ICl) bool) {
 func (c %s) analysis(content []byte) {
 	%sConfig.lock.Lock()
 	defer %sConfig.lock.Unlock()
-	%sConfig.configMap = make(map[int32]%s)
-	%sConfig.groupMap = make(map[int32]map[int32]%s)
+	%sConfig.configMap = make(map[int64]%s)
+	%sConfig.groupMap = make(map[int64]map[int64]%s)
 	temp := []%sJson{}
 	json.Unmarshal(content, &temp)
 	for _, cj := range temp {
@@ -90,7 +90,7 @@ func (c %s) analysis(content []byte) {
 	}
 }
 
-func (cj %sJson) getKey() int32 {
+func (cj %sJson) getKey() int64 {
 	return cj.%s
 }
 
@@ -139,19 +139,19 @@ func (c %s) hasGroup() bool {
 }
 
 // getConfigByKey 获取配置
-func (c %s) getConfigByKey(id int32) (ICl, bool) {
+func (c %s) getConfigByKey(id int64) (ICl, bool) {
 	%sConfig.lock.RLock()
 	defer %sConfig.lock.RUnlock()
 	return %sConfig.config, true
 }
 
 // getConfigByGroup 获取组配置（对象配置中不会进行任何操作）
-func (c %s) getConfigByGroup(groupId int32, groupKey int32) (ICl, bool) {
+func (c %s) getConfigByGroup(groupId int64, groupKey int64) (ICl, bool) {
 	return nil, false
 }
 
 // iteratorConfigs 全部配置迭代器（对象配置中不会进行任何操作）
-func (c %s) iteratorConfigs(f func(key int32, value ICl) bool) {
+func (c %s) iteratorConfigs(f func(key int64, value ICl) bool) {
 
 }
 
@@ -192,10 +192,10 @@ type ICl interface {
 	fileName() string
 	structName() string
 	analysis([]byte)
-	getConfigByKey(int32) (ICl, bool)
-	iteratorConfigs(f func(key int32, value ICl) bool)
+	getConfigByKey(int64) (ICl, bool)
+	iteratorConfigs(f func(key int64, value ICl) bool)
 	hasGroup() bool
-	getConfigByGroup(int32, int32) (ICl, bool)
+	getConfigByGroup(int64, int64) (ICl, bool)
 }
 
 func AddCl(cl ICl) {
@@ -238,7 +238,7 @@ func readFileLoadMap(file fs.DirEntry, fileDir string) {
 }
 
 // GetGameConfig 获取单个配置
-func GetGameConfig[T ICl](cl T, id int32) (T, bool) {
+func GetGameConfig[T ICl](cl T, id int64) (T, bool) {
 	icl, ok := cl.getConfigByKey(id)
 	if ok {
 		cl = icl.(T)
@@ -247,7 +247,7 @@ func GetGameConfig[T ICl](cl T, id int32) (T, bool) {
 }
 
 // GetGameConfigByGroup 按分组获取单个配置
-func GetGameConfigByGroup[T ICl](cl T, groupId, groupKey int32) (T, bool) {
+func GetGameConfigByGroup[T ICl](cl T, groupId, groupKey int64) (T, bool) {
 	if !cl.hasGroup() {
 		return cl, false
 	}
@@ -259,7 +259,7 @@ func GetGameConfigByGroup[T ICl](cl T, groupId, groupKey int32) (T, bool) {
 }
 
 // IteratorAllConfig 全部配置迭代器
-func IteratorAllConfig[T ICl](cl T, f func(key int32, value ICl) bool) {
+func IteratorAllConfig[T ICl](cl T, f func(key int64, value ICl) bool) {
 	cl.iteratorConfigs(f)
 }
 
