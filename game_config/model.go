@@ -31,6 +31,7 @@ type GameConfig struct {
 	blackList     []string
 	groupList     map[string]Group
 	primaryKeyMap map[string]string
+	keyTypeMap    map[string]KeyType
 }
 
 type jsonStruct struct {
@@ -43,6 +44,7 @@ type jsonStruct struct {
 	ExtraStruct []string
 	Content     []byte
 	Keys        []key
+	KeyTypeSets []KeyTypeSet
 }
 
 type key struct {
@@ -63,4 +65,15 @@ type Group struct {
 	JsonFileName string
 	GroupId      string
 	GroupKey     string
+}
+
+type KeyType struct {
+	JsonFileName string
+	KeyTypeSets  []KeyTypeSet
+}
+
+type KeyTypeSet struct {
+	BaseKeyName  string
+	ExtraKeyName string
+	KeyType      string
 }

@@ -2,35 +2,35 @@ package game_config
 
 import "github.com/kennycch/gotools/general"
 
-// 目录路径
+// SetDir 目录路径
 func SetDir(dirPath string) option {
 	return func(g *GameConfig) {
 		g.dirPath = dirPath
 	}
 }
 
-// 文件路径
+// SetFile 文件路径
 func SetFile(filePath string) option {
 	return func(g *GameConfig) {
 		g.filePath = filePath
 	}
 }
 
-// 目标路径
+// SetTarget 目标路径
 func SetTarget(targetPath string) option {
 	return func(g *GameConfig) {
 		g.targetPath = targetPath
 	}
 }
 
-// 文件黑名单
+// SetBlackList 文件黑名单
 func SetBlackList(fileName ...string) option {
 	return func(g *GameConfig) {
 		g.blackList = fileName
 	}
 }
 
-// 设置主键
+// SetPrimaryKey 设置主键
 func SetPrimaryKey(keys ...Key) option {
 	return func(g *GameConfig) {
 		for _, key := range keys {
@@ -39,7 +39,7 @@ func SetPrimaryKey(keys ...Key) option {
 	}
 }
 
-// 设置分组
+// SetGroup 设置分组
 func SetGroup(groups ...Group) option {
 	return func(g *GameConfig) {
 		for _, group := range groups {
@@ -51,6 +51,14 @@ func SetGroup(groups ...Group) option {
 				group.GroupKey += "Dk"
 			}
 			g.groupList[group.JsonFileName] = group
+		}
+	}
+}
+
+func SetKeyType(keyTypes ...KeyType) option {
+	return func(g *GameConfig) {
+		for _, keyType := range keyTypes {
+			g.keyTypeMap[keyType.JsonFileName] = keyType
 		}
 	}
 }

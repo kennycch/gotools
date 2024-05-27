@@ -13,11 +13,13 @@ import (
 	"github.com/kennycch/gotools/general"
 )
 
+// NewGameConfig 配置转换工具对象
 func NewGameConfig(options ...option) *GameConfig {
 	gameConfig := &GameConfig{
 		blackList:     make([]string, 0),
 		groupList:     make(map[string]Group),
 		primaryKeyMap: make(map[string]string),
+		keyTypeMap:    make(map[string]KeyType),
 	}
 	for _, op := range options {
 		op(gameConfig)
@@ -25,14 +27,14 @@ func NewGameConfig(options ...option) *GameConfig {
 	return gameConfig
 }
 
-// 添加配置
+// AddOptions 添加配置
 func (g *GameConfig) AddOptions(options ...option) {
 	for _, op := range options {
 		op(g)
 	}
 }
 
-// 生成目标目录的结构体
+// CreateStructByDir 生成目标目录的结构体
 func (g *GameConfig) CreateStructByDir() []error {
 	errs := []error{}
 	if g.dirPath == "" || g.targetPath == "" {
@@ -76,7 +78,7 @@ func (g *GameConfig) CreateStructByDir() []error {
 	return errs
 }
 
-// 生成目标文件的结构体
+// CreateStructByFile 生成目标文件的结构体
 func (g *GameConfig) CreateStructByFile() error {
 	if g.filePath == "" || g.targetPath == "" {
 		return fmt.Errorf("file path or target path can not empty")
@@ -108,7 +110,7 @@ func (g *GameConfig) CreateStructByFile() error {
 	return nil
 }
 
-// 生成管理文件
+// createManagerFile 生成管理文件
 func (g *GameConfig) createManagerFile() {
 	fullName := filepath.Join(g.targetPath, "manager.go")
 	// 文件内容
@@ -116,7 +118,7 @@ func (g *GameConfig) createManagerFile() {
 	g.createFile(fullName, content)
 }
 
-// 创建游戏配置文件
+// createGoFile 创建游戏配置文件
 func (g *GameConfig) createGoFile(fileFullName, fileName string, content []byte) {
 	// 解析Json
 	js := &jsonStruct{
@@ -127,6 +129,9 @@ func (g *GameConfig) createGoFile(fileFullName, fileName string, content []byte)
 		Content:     content,
 		Keys:        []key{},
 	}
+	if keyTypes, ok := g.keyTypeMap[js.FileName]; ok {
+		js.KeyTypeSets = keyTypes.KeyTypeSets
+	}
 	fileContent := g.analysisJson(js)
 	if fileContent == "" {
 		return
@@ -136,7 +141,7 @@ func (g *GameConfig) createGoFile(fileFullName, fileName string, content []byte)
 	g.createFile(fullName, fileContent)
 }
 
-// 生成文件
+// createFile 生成文件
 func (g *GameConfig) createFile(fullName, content string) {
 	// 如果文件已存在，需要先删除文件
 	_, err := os.Stat(fullName)
@@ -149,7 +154,7 @@ func (g *GameConfig) createFile(fullName, content string) {
 	goFile.WriteString(content)
 }
 
-// 解析Json
+// analysisJson 解析Json
 func (g *GameConfig) analysisJson(js *jsonStruct) string {
 	content := ""
 	if len(js.Content) == 0 {
@@ -170,7 +175,7 @@ func (g *GameConfig) analysisJson(js *jsonStruct) string {
 	return content
 }
 
-// 数组分析
+// analysisArray 数组分析
 func (g *GameConfig) analysisArray(js *jsonStruct) string {
 	array := []map[string]interface{}{}
 	if err := json.Unmarshal(js.Content, &array); err != nil {
@@ -198,63 +203,51 @@ func (g *GameConfig) analysisArray(js *jsonStruct) string {
 				upper += "Dk"
 				lower += "Dk"
 			}
-			valueType := reflect.TypeOf(v).Kind()
-			switch valueType {
-			case reflect.Bool: // 布尔
-				js.BaseStruct += fmt.Sprintf("	%s bool\n", lower)
-				js.JsonStruct += fmt.Sprintf("	%s bool `json:\"%s\"`\n", upper, k)
-				jsKey := key{
-					Upper:    upper,
-					Lower:    lower,
-					KindType: "bool",
-				}
-				js.Keys = append(js.Keys, jsKey)
-			case reflect.Float64: // 数字（所有数字类型都会被识别为小数）
-				if g.isIntValue(array, k) {
-					js.BaseStruct += fmt.Sprintf("	%s int64\n", lower)
-					js.JsonStruct += fmt.Sprintf("	%s int64 `json:\"%s\"`\n", upper, k)
-					jsKey := key{
-						Upper:    upper,
-						Lower:    lower,
-						KindType: "int64",
-					}
-					js.Keys = append(js.Keys, jsKey)
-				} else {
-					js.BaseStruct += fmt.Sprintf("	%s float64\n", lower)
-					js.JsonStruct += fmt.Sprintf("	%s float64 `json:\"%s\"`\n", upper, k)
-					jsKey := key{
-						Upper:    upper,
-						Lower:    lower,
-						KindType: "float64",
-					}
-					js.Keys = append(js.Keys, jsKey)
-				}
-			case reflect.String: // 字符串
-				js.BaseStruct += fmt.Sprintf("	%s string\n", lower)
-				js.JsonStruct += fmt.Sprintf("	%s string `json:\"%s\"`\n", upper, k)
-				jsKey := key{
-					Upper:    upper,
-					Lower:    lower,
-					KindType: "string",
-				}
-				js.Keys = append(js.Keys, jsKey)
-			case reflect.Array, reflect.Slice: // 数组
-				valueType, jsonType := g.handleArray(array, js, k, v)
-				if valueType == "" {
-					continue
-				}
-				js.HasArray = true
-				js.BaseStruct += fmt.Sprintf("	%s %s\n", lower, "[]"+valueType)
-				js.JsonStruct += fmt.Sprintf("	%s %s `json:\"%s\"`\n", upper, "[]"+jsonType, k)
-				jsKey := key{
-					Upper:      upper,
-					Lower:      lower,
-					KindType:   "[]" + valueType,
-					BaseStruct: valueType,
-					JsonStruct: jsonType,
-				}
-				js.Keys = append(js.Keys, jsKey)
+			jsKey := key{
+				Upper: upper,
+				Lower: lower,
 			}
+			// 指定类型
+			specifiedType := js.getSpecifiedType(k, "")
+			if specifiedType != "" {
+				js.BaseStruct += fmt.Sprintf("	%s %s\n", lower, specifiedType)
+				js.JsonStruct += fmt.Sprintf("	%s %s `json:\"%s\"`\n", upper, specifiedType, k)
+				jsKey.KindType = specifiedType
+			} else {
+				valueType := reflect.TypeOf(v).Kind()
+				switch valueType {
+				case reflect.Bool: // 布尔
+					js.BaseStruct += fmt.Sprintf("	%s bool\n", lower)
+					js.JsonStruct += fmt.Sprintf("	%s bool `json:\"%s\"`\n", upper, k)
+					jsKey.KindType = "bool"
+				case reflect.Float64: // 数字（所有数字类型都会被识别为小数）
+					if g.isIntValue(array, k) {
+						js.BaseStruct += fmt.Sprintf("	%s int32\n", lower)
+						js.JsonStruct += fmt.Sprintf("	%s int32 `json:\"%s\"`\n", upper, k)
+						jsKey.KindType = "int32"
+					} else {
+						js.BaseStruct += fmt.Sprintf("	%s float64\n", lower)
+						js.JsonStruct += fmt.Sprintf("	%s float64 `json:\"%s\"`\n", upper, k)
+						jsKey.KindType = "float64"
+					}
+				case reflect.String: // 字符串
+					js.BaseStruct += fmt.Sprintf("	%s string\n", lower)
+					js.JsonStruct += fmt.Sprintf("	%s string `json:\"%s\"`\n", upper, k)
+					jsKey.KindType = "string"
+				case reflect.Array, reflect.Slice: // 数组
+					valueType, jsonType := g.handleArray(array, js, k, v)
+					if valueType == "" {
+						continue
+					}
+					js.HasArray = true
+					js.BaseStruct += fmt.Sprintf("	%s %s\n", lower, "[]"+valueType)
+					js.JsonStruct += fmt.Sprintf("	%s %s `json:\"%s\"`\n", upper, "[]"+jsonType, k)
+					jsKey.KindType = "[]" + valueType
+					jsKey.BaseStruct = valueType
+					jsKey.JsonStruct = jsonType
+				}
+			}
+			js.Keys = append(js.Keys, jsKey)
 		}
 	}
 	js.BaseStruct += "}\n"
@@ -294,7 +287,7 @@ func (g *GameConfig) analysisArray(js *jsonStruct) string {
 	)
 }
 
-// 对象分析
+// analysisObject 对象分析
 func (g *GameConfig) analysisObject(js *jsonStruct) string {
 	mapping := map[string]interface{}{}
 	if err := json.Unmarshal(js.Content, &mapping); err != nil {
@@ -311,64 +304,56 @@ func (g *GameConfig) analysisObject(js *jsonStruct) string {
 			continue
 		}
 		upper, lower := general.HumpFormat(k, true), general.HumpFormat(k, false)
-		valueType := reflect.TypeOf(v).Kind()
-		switch valueType {
-		case reflect.Bool: // 布尔
-			js.BaseStruct += fmt.Sprintf("	%s bool\n", lower)
-			js.JsonStruct += fmt.Sprintf("	%s bool `json:\"%s\"`\n", upper, k)
-			jsKey := key{
-				Upper:    upper,
-				Lower:    lower,
-				KindType: "bool",
-			}
-			js.Keys = append(js.Keys, jsKey)
-		case reflect.Float64: // 数字（所有数字类型都会被识别为小数）
-			num := v.(float64)
-			if math.Floor(num) == num {
-				js.BaseStruct += fmt.Sprintf("	%s int64\n", lower)
-				js.JsonStruct += fmt.Sprintf("	%s int64 `json:\"%s\"`\n", upper, k)
-				jsKey := key{
-					Upper:    upper,
-					Lower:    lower,
-					KindType: "int64",
-				}
-				js.Keys = append(js.Keys, jsKey)
-			} else {
-				js.BaseStruct += fmt.Sprintf("	%s float64\n", lower)
-				js.JsonStruct += fmt.Sprintf("	%s float64 `json:\"%s\"`\n", upper, k)
-				jsKey := key{
-					Upper:    upper,
-					Lower:    lower,
-					KindType: "float64",
-				}
-				js.Keys = append(js.Keys, jsKey)
-			}
-		case reflect.String: // 字符串
-			js.BaseStruct += fmt.Sprintf("	%s string\n", lower)
-			js.JsonStruct += fmt.Sprintf("	%s string `json:\"%s\"`\n", upper, k)
-			jsKey := key{
-				Upper:    upper,
-				Lower:    lower,
-				KindType: "string",
-			}
-			js.Keys = append(js.Keys, jsKey)
-		case reflect.Array, reflect.Slice: // 数组
-			valueType, jsonType := g.handleArray([]map[string]interface{}{mapping}, js, k, v)
-			if valueType == "" {
-				continue
-			}
-			js.HasArray = true
-			js.BaseStruct += fmt.Sprintf("	%s %s\n", lower, "[]"+valueType)
-			js.JsonStruct += fmt.Sprintf("	%s %s `json:\"%s\"`\n", upper, "[]"+jsonType, k)
-			jsKey := key{
-				Upper:      upper,
-				Lower:      lower,
-				KindType:   "[]" + valueType,
-				BaseStruct: valueType,
-				JsonStruct: jsonType,
-			}
-			js.Keys = append(js.Keys, jsKey)
+		if general.InArray(disableKey, lower) {
+			upper += "Dk"
+			lower += "Dk"
 		}
+		jsKey := key{
+			Upper: upper,
+			Lower: lower,
+		}
+		// 指定类型
+		specifiedType := js.getSpecifiedType(k, "")
+		if specifiedType != "" {
+			js.BaseStruct += fmt.Sprintf("	%s %s\n", lower, specifiedType)
+			js.JsonStruct += fmt.Sprintf("	%s %s `json:\"%s\"`\n", upper, specifiedType, k)
+			jsKey.KindType = specifiedType
+		} else {
+			valueType := reflect.TypeOf(v).Kind()
+			switch valueType {
+			case reflect.Bool: // 布尔
+				js.BaseStruct += fmt.Sprintf("	%s bool\n", lower)
+				js.JsonStruct += fmt.Sprintf("	%s bool `json:\"%s\"`\n", upper, k)
+				jsKey.KindType = "bool"
+			case reflect.Float64: // 数字（所有数字类型都会被识别为小数）
+				num := v.(float64)
+				if math.Floor(num) == num {
+					js.BaseStruct += fmt.Sprintf("	%s int32\n", lower)
+					js.JsonStruct += fmt.Sprintf("	%s int32 `json:\"%s\"`\n", upper, k)
+					jsKey.KindType = "int32"
+				} else {
+					js.BaseStruct += fmt.Sprintf("	%s float64\n", lower)
+					js.JsonStruct += fmt.Sprintf("	%s float64 `json:\"%s\"`\n", upper, k)
+					jsKey.KindType = "float64"
+				}
+			case reflect.String: // 字符串
+				js.BaseStruct += fmt.Sprintf("	%s string\n", lower)
+				js.JsonStruct += fmt.Sprintf("	%s string `json:\"%s\"`\n", upper, k)
+				jsKey.KindType = "string"
+			case reflect.Array, reflect.Slice: // 数组
+				valueType, jsonType := g.handleArray([]map[string]interface{}{mapping}, js, k, v)
+				if valueType == "" {
+					continue
+				}
+				js.HasArray = true
+				js.BaseStruct += fmt.Sprintf("	%s %s\n", lower, "[]"+valueType)
+				js.JsonStruct += fmt.Sprintf("	%s %s `json:\"%s\"`\n", upper, "[]"+jsonType, k)
+				jsKey.KindType = "[]" + valueType
+				jsKey.BaseStruct = valueType
+				jsKey.JsonStruct = jsonType
+			}
+		}
+		js.Keys = append(js.Keys, jsKey)
 	}
 	js.BaseStruct += "}\n"
 	js.JsonStruct += "}\n"
@@ -404,7 +389,7 @@ func (g *GameConfig) analysisObject(js *jsonStruct) string {
 	)
 }
 
-// 生成复制内容
+// getCopy 生成复制内容
 func (g *GameConfig) getCopy(js *jsonStruct) string {
 	copyStr := fmt.Sprintf("func (cj %sJson) copy() %s {\n	c := %s{\n", js.Upper, js.Upper, js.Upper)
 	arrayStructs := []key{}
@@ -432,7 +417,7 @@ func (g *GameConfig) getCopy(js *jsonStruct) string {
 	return copyStr
 }
 
-// 获取主键
+// getPrimaryKey 获取主键
 func (g *GameConfig) getPrimaryKey(js *jsonStruct) string {
 	primaryKey, ok := g.primaryKeyMap[js.FileName]
 	if !ok {
@@ -441,7 +426,7 @@ func (g *GameConfig) getPrimaryKey(js *jsonStruct) string {
 	return primaryKey
 }
 
-// 处理数组
+// handleArray 处理数组
 func (g *GameConfig) handleArray(array []map[string]interface{}, js *jsonStruct, key string, value interface{}) (string, string) {
 	valueType, jsonType := "", ""
 	arr := value.([]interface{})
@@ -453,7 +438,7 @@ func (g *GameConfig) handleArray(array []map[string]interface{}, js *jsonStruct,
 			valueType, jsonType = "bool", "bool"
 		case reflect.Float64: // 数字（所有数字类型都会被识别为小数）
 			if key == "id" || g.isIntArray(array, key) {
-				valueType, jsonType = "int64", "int64"
+				valueType, jsonType = "int32", "int32"
 			} else {
 				valueType, jsonType = "float64", "float64"
 			}
@@ -466,7 +451,7 @@ func (g *GameConfig) handleArray(array []map[string]interface{}, js *jsonStruct,
 	return valueType, jsonType
 }
 
-// 处理额外结构体
+// handleExtraStruct 处理额外结构体
 func (g *GameConfig) handleExtraStruct(array []map[string]interface{}, js *jsonStruct, k string, v interface{}) (string, string) {
 	mappings := v.([]interface{})
 	mapping := mappings[0].(map[string]interface{})
@@ -494,47 +479,40 @@ func (g *GameConfig) handleExtraStruct(array []map[string]interface{}, js *jsonS
 			upper += "Dk"
 			lower += "Dk"
 		}
-		vType := reflect.TypeOf(val).Kind()
-		switch vType {
-		case reflect.Bool: // 布尔
-			exJs.BaseStruct += fmt.Sprintf("	%s bool\n", upper)
-			exJs.JsonStruct += fmt.Sprintf("	%s bool `json:\"%s\"`\n", upper, ke)
-			jsKey := key{
-				Upper:    upper,
-				Lower:    lower,
-				KindType: "bool",
-			}
-			exJs.Keys = append(exJs.Keys, jsKey)
-		case reflect.Float64: // 数字（所有数字类型都会被识别为小数）
-			if g.isIntMap(array, k, ke) {
-				exJs.BaseStruct += fmt.Sprintf("	%s int64\n", lower)
-				exJs.JsonStruct += fmt.Sprintf("	%s int64 `json:\"%s\"`\n", upper, ke)
-				jsKey := key{
-					Upper:    upper,
-					Lower:    lower,
-					KindType: "int64",
-				}
-				exJs.Keys = append(exJs.Keys, jsKey)
-			} else {
-				exJs.BaseStruct += fmt.Sprintf("	%s float64\n", lower)
-				exJs.JsonStruct += fmt.Sprintf("	%s float64 `json:\"%s\"`\n", upper, ke)
-				jsKey := key{
-					Upper:    upper,
-					Lower:    lower,
-					KindType: "float64",
-				}
-				exJs.Keys = append(exJs.Keys, jsKey)
-			}
-		case reflect.String: // 字符串
-			exJs.BaseStruct += fmt.Sprintf("	%s string\n", lower)
-			exJs.JsonStruct += fmt.Sprintf("	%s string `json:\"%s\"`\n", upper, ke)
-			jsKey := key{
-				Upper:    upper,
-				Lower:    lower,
-				KindType: "string",
-			}
-			exJs.Keys = append(exJs.Keys, jsKey)
+		jsKey := key{
+			Upper: upper,
+			Lower: lower,
 		}
+		// 指定类型
+		specifiedType := js.getSpecifiedType(k, ke)
+		if specifiedType != "" {
+			exJs.BaseStruct += fmt.Sprintf("	%s %s\n", lower, specifiedType)
+			exJs.JsonStruct += fmt.Sprintf("	%s %s `json:\"%s\"`\n", upper, specifiedType, k)
+			jsKey.KindType = specifiedType
+		} else {
+			vType := reflect.TypeOf(val).Kind()
+			switch vType {
+			case reflect.Bool: // 布尔
+				exJs.BaseStruct += fmt.Sprintf("	%s bool\n", upper)
+				exJs.JsonStruct += fmt.Sprintf("	%s bool `json:\"%s\"`\n", upper, ke)
+				jsKey.KindType = "bool"
+			case reflect.Float64: // 数字（所有数字类型都会被识别为小数）
+				if g.isIntMap(array, k, ke) {
+					exJs.BaseStruct += fmt.Sprintf("	%s int32\n", lower)
+					exJs.JsonStruct += fmt.Sprintf("	%s int32 `json:\"%s\"`\n", upper, ke)
+					jsKey.KindType = "int32"
+				} else {
+					exJs.BaseStruct += fmt.Sprintf("	%s float64\n", lower)
+					exJs.JsonStruct += fmt.Sprintf("	%s float64 `json:\"%s\"`\n", upper, ke)
+					jsKey.KindType = "float64"
+				}
+			case reflect.String: // 字符串
+				exJs.BaseStruct += fmt.Sprintf("	%s string\n", lower)
+				exJs.JsonStruct += fmt.Sprintf("	%s string `json:\"%s\"`\n", upper, ke)
+				jsKey.KindType = "string"
+			}
+		}
+		exJs.Keys = append(exJs.Keys, jsKey)
 	}
 	exJs.BaseStruct += "}\n"
 	exJs.JsonStruct += "}\n"
@@ -550,7 +528,7 @@ func (g *GameConfig) handleExtraStruct(array []map[string]interface{}, js *jsonS
 	return valueType, jsonType
 }
 
-// 生成获取值方法
+// getFuncs 生成获取值方法
 func (g *GameConfig) getFuncs(js *jsonStruct) string {
 	funcs := ""
 	for _, key := range js.Keys {
@@ -563,13 +541,13 @@ func (g *GameConfig) getFuncs(js *jsonStruct) string {
 	return funcs
 }
 
-// 生成分组解析方法
+// getGroupConfig 生成分组解析方法
 func (g *GameConfig) getGroupConfig(js *jsonStruct) (hasGroup, groupAnalysis string) {
 	if groupConfig, ok := g.groupList[js.FileName]; ok {
 		hasGroup = "true"
 		template := `
 		if _, ok := %sConfig.groupMap[conf.%s]; !ok {
-			%sConfig.groupMap[conf.%s] = make(map[int64]%s)
+			%sConfig.groupMap[conf.%s] = make(map[int32]%s)
 		}
 		%sConfig.groupMap[conf.%s][conf.%s] = conf`
 		groupAnalysis = fmt.Sprintf(template,
@@ -588,7 +566,7 @@ func (g *GameConfig) getGroupConfig(js *jsonStruct) (hasGroup, groupAnalysis str
 	return
 }
 
-// 是否整型（简单类型）
+// isIntValue 是否整型（简单类型）
 func (g *GameConfig) isIntValue(array []map[string]interface{}, key string) bool {
 	flag := true
 	for _, value := range array {
@@ -601,7 +579,7 @@ func (g *GameConfig) isIntValue(array []map[string]interface{}, key string) bool
 	return flag
 }
 
-// 是否整型（数组）
+// isIntArray 是否整型（数组）
 func (g *GameConfig) isIntArray(array []map[string]interface{}, key string) bool {
 	flag := true
 label:
@@ -618,7 +596,7 @@ label:
 	return flag
 }
 
-// 是否整型（数组对象）
+// isIntMap 是否整型（数组对象）
 func (g *GameConfig) isIntMap(array []map[string]interface{}, key, ke string) bool {
 	flag := true
 label:
@@ -639,7 +617,21 @@ label:
 	return flag
 }
 
-// 结构体格式化
+// getSpecifiedType 获取指定字段类型
+func (js *jsonStruct) getSpecifiedType(baseKey, extraKey string) string {
+	keyType := ""
+	if len(js.KeyTypeSets) > 0 {
+		for _, keyTypeSet := range js.KeyTypeSets {
+			if baseKey == keyTypeSet.BaseKeyName && extraKey == keyTypeSet.ExtraKeyName {
+				keyType = keyTypeSet.KeyType
+				break
+			}
+		}
+	}
+	return keyType
+}
+
+// baseStructFormat 结构体格式化
 func baseStructFormat(baseStruct string) string {
 	arr := strings.Split(baseStruct, "\n")
 	// 统计字段最大长度
@@ -670,7 +662,7 @@ func baseStructFormat(baseStruct string) string {
 	return strings.Join(arr, "\n")
 }
 
-// json结构体格式化
+// jsonStructFormat json结构体格式化
 func jsonStructFormat(jsonStruct string) string {
 	arr := strings.Split(jsonStruct, "\n")
 	// 统计字段最大长度
