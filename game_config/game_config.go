@@ -487,7 +487,7 @@ func (g *GameConfig) handleExtraStruct(array []map[string]interface{}, js *jsonS
 		specifiedType := js.getSpecifiedType(k, ke)
 		if specifiedType != "" {
 			exJs.BaseStruct += fmt.Sprintf("	%s %s\n", lower, specifiedType)
-			exJs.JsonStruct += fmt.Sprintf("	%s %s `json:\"%s\"`\n", upper, specifiedType, k)
+			exJs.JsonStruct += fmt.Sprintf("	%s %s `json:\"%s\"`\n", upper, specifiedType, ke)
 			jsKey.KindType = specifiedType
 		} else {
 			vType := reflect.TypeOf(val).Kind()
