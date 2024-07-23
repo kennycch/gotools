@@ -7,11 +7,7 @@ import (
 	"github.com/kennycch/gotools/general"
 )
 
-/*
-创建列表对象
-element：储存对象
-listStruct：列表对象
-*/
+// NewList 创建列表对象
 func NewList[T listType]() (listStruct *List[T]) {
 	listStruct = &List[T]{
 		lists: make([]T, 0),
@@ -20,12 +16,7 @@ func NewList[T listType]() (listStruct *List[T]) {
 	return
 }
 
-/*
-新增对象
-如果新增的对象分数与已存在对象一致，新增对象被视为同分数中最小
-element：需要储存的对象
-index：新增对象的下标
-*/
+// Insert 新增对象
 func (l *List[T]) Insert(element T) (index int) {
 	l.lock.Lock()
 	defer l.lock.Unlock()
@@ -34,21 +25,14 @@ func (l *List[T]) Insert(element T) (index int) {
 	return index
 }
 
-/*
-删除对象
-*/
+// Remove 删除对象
 func (l *List[T]) Remove(index int) {
 	l.lock.Lock()
 	defer l.lock.Unlock()
 	l.lists = general.DeleteValueByKey(l.lists, index)
 }
 
-/*
-获取指定范围的对象
-start：开始下标
-num：取出的数量（负数表示全部取出）
-elements：对象集
-*/
+// GetElements 获取指定范围的对象
 func (l *List[T]) GetElements(start, num int) (elements []T) {
 	elements = make([]T, 0)
 	lenght := len(l.lists)
@@ -70,11 +54,12 @@ func (l *List[T]) GetElements(start, num int) (elements []T) {
 	return
 }
 
-/*
-弹出链表首部对象
-element：对象
-err：错误提示
-*/
+// GetLen 获取链表长度
+func (l *List[T]) GetLen() int {
+	return len(l.lists)
+}
+
+// PopFront 弹出链表首部对象
 func (l *List[T]) PopFront() (element T, err error) {
 	if len(l.lists) == 0 {
 		err = fmt.Errorf("list is empty")
@@ -87,11 +72,7 @@ func (l *List[T]) PopFront() (element T, err error) {
 	return
 }
 
-/*
-弹出链表尾部对象
-element：对象
-err：错误提示
-*/
+// PopBack 弹出链表尾部对象
 func (l *List[T]) PopBack() (element T, err error) {
 	if len(l.lists) == 0 {
 		err = fmt.Errorf("list is empty")
@@ -105,7 +86,14 @@ func (l *List[T]) PopBack() (element T, err error) {
 	return
 }
 
-// 压入元素
+// ClearList 清空链表
+func (l *List[T]) ClearList() {
+	l.lock.Lock()
+	defer l.lock.Unlock()
+	l.lists = l.lists[:0]
+}
+
+// push 压入元素
 func (l *List[T]) push(element T) (index int) {
 	// 根据分数找到对象下标
 	index = l.getIndex(element)
@@ -114,7 +102,7 @@ func (l *List[T]) push(element T) (index int) {
 	return
 }
 
-// 增加元素
+// addList 增加元素
 func (l *List[T]) addList(index int, element T) {
 	// 裁剪切片
 	before := general.ArrayCopy(l.lists[:index])
@@ -124,7 +112,7 @@ func (l *List[T]) addList(index int, element T) {
 	l.lists = append(l.lists, after...)
 }
 
-// 根据分数安排对象下标
+// getIndex 根据分数安排对象下标
 func (l *List[T]) getIndex(element T) int {
 	index := -1
 	if len(l.lists) != 0 {
