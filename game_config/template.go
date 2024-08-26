@@ -176,9 +176,6 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
-	"time"
-
-	"github.com/kennycch/gotools/timer"
 )
 
 var (
@@ -219,10 +216,8 @@ func InitCl(dirPath string) {
 			panic(fmt.Errorf("config file not found, file name:%%s", icl.fileName()))
 		}
 	}
-	// 监听配置更改
-	Listen(dirPath)
 	// 清除缓存
-	ClearTemp()
+	clearTemp()
 }
 
 // readFileLoadMap 读取配置文件
@@ -265,37 +260,9 @@ func IteratorAllConfig[T ICl](cl T, f func(key int32, value ICl) bool) {
 	cl.iteratorConfigs(f)
 }
 
-// Listen 监听配置更改
-func Listen(dirPath string) {
-	timer.AddTicker(5*time.Minute, func() {
-		// 重载配置
-		filepath.WalkDir(".", func(dirPath string, file fs.DirEntry, err error) error {
-			if _, ok := fileNameToCL[file.Name()]; ok {
-				reloadConfig(file, dirPath)
-			}
-			return err
-		})
-	})
-}
-
-// ClearTemp 清除缓存
-func ClearTemp() {
+// clearTemp 清除缓存
+func clearTemp() {
 	loadTmpJsonMap = make(map[string][]byte, 0)
-}
-
-// reloadConfig 重载配置
-func reloadConfig(file fs.DirEntry, fileDir string) {
-	info, err := file.Info()
-	if err != nil {
-		return
-	}
-	if changeTime, ok := fileChangeTime[file.Name()]; ok && info.ModTime().Unix() == changeTime {
-		return
-	}
-	readFileLoadMap(file, fileDir)
-	if icl, ok := fileNameToCL[file.Name()]; ok {
-		icl.analysis(loadTmpJsonMap[file.Name()])
-	}
 }
 `
 )
