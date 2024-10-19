@@ -76,6 +76,21 @@ func (c %s) iteratorConfigs(f func(key int32, value ICl) bool) {
 	}
 }
 
+// iteratorByType 按类迭代
+func (c %s) iteratorByType(typeId int32, f func(key int32, value ICl) bool) {
+	if c.hasGroup() {
+		%sConfig.lock.RLock()
+		defer %sConfig.lock.RUnlock()
+		if group, ok := %sConfig.groupMap[typeId]; ok {
+			for k, v := range group {
+				if !f(k, v) {
+					break
+				}
+			}
+		}
+	}
+}
+
 // analysis 解析Json
 func (c %s) analysis(content []byte) {
 	%sConfig.lock.Lock()
@@ -156,6 +171,11 @@ func (c %s) iteratorConfigs(f func(key int32, value ICl) bool) {
 
 }
 
+// iteratorByType 按类迭代（对象配置中不会进行任何操作）
+func (c %s) iteratorByType(typeId int32, f func(key int32, value ICl) bool) {
+
+}
+
 // analysis 解析Json
 func (c %s) analysis(content []byte) {
 	%sConfig.lock.Lock()
@@ -195,6 +215,7 @@ type ICl interface {
 	iteratorConfigs(f func(key int32, value ICl) bool)
 	hasGroup() bool
 	getConfigByGroup(int32, int32) (ICl, bool)
+	iteratorByType(typeId int32, f func(key int32, value ICl) bool)
 }
 
 func AddCl(cl ICl) {
@@ -258,6 +279,11 @@ func GetGameConfigByGroup[T ICl](cl T, groupId, groupKey int32) (T, bool) {
 // IteratorAllConfig 全部配置迭代器
 func IteratorAllConfig[T ICl](cl T, f func(key int32, value ICl) bool) {
 	cl.iteratorConfigs(f)
+}
+
+// IteratorByType 按类迭代
+func IteratorByType[T ICl](cl T, typeId int32, f func(key int32, value ICl) bool) {
+	cl.iteratorByType(typeId, f)
 }
 
 // clearTemp 清除缓存
