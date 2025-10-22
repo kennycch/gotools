@@ -1,12 +1,13 @@
 package list
 
-import "sync"
+import (
+	"sync"
 
-type listType interface {
-	GetScore() float64
-}
+	"github.com/kennycch/gotools/general"
+)
 
-type List[T listType] struct {
-	lists []T
-	lock  *sync.RWMutex
+type List[T any, V general.Ordered] struct {
+	lists    []T
+	lock     *sync.RWMutex
+	sortFunc func(T) V
 }

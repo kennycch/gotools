@@ -22,16 +22,16 @@ import (
 //	@param obstacles 障碍物坐标
 //	@param diagonal 是否可对角移动
 //	@return aStar A星导航对象
-func NewAStar(row, cap int, obstacles []int, diagonal bool) (aStar *AStar) {
+func NewAStar[V general.Signed](row, cap V, obstacles []V, diagonal bool) (aStar *AStar[V]) {
 	if row <= 0 || cap <= 0 {
 		return nil
 	}
 	// 初始化导航对象
-	aStar = &AStar{
+	aStar = &AStar[V]{
 		mapRow:    row,
 		maxNode:   row*cap - 1,
 		diagonal:  diagonal,
-		obstacles: make(map[int]struct{}),
+		obstacles: make(map[V]struct{}),
 	}
 	// 过滤地图外的障碍物
 	for _, obstacle := range obstacles {
@@ -50,7 +50,7 @@ func NewAStar(row, cap int, obstacles []int, diagonal bool) (aStar *AStar) {
 //	@param targetIndex 目标节点
 //	@return path 规划的路径
 //	@return result 是否成功生成路径规划
-func (a *AStar) Planning(startIndex, targetIndex int) (path []int, result bool) {
+func (a *AStar[V]) Planning(startIndex, targetIndex V) (path []V, result bool) {
 	if startIndex == targetIndex ||
 		!a.isInMap(startIndex) || !a.isInMap(targetIndex) ||
 		a.isObstacle(startIndex) || a.isObstacle(targetIndex) {
@@ -62,8 +62,10 @@ func (a *AStar) Planning(startIndex, targetIndex int) (path []int, result bool) 
 	a.targetIndex = targetIndex
 	a.isSearchTarget = false
 	// 清空列表
-	a.closeList = make(map[int]*Node)
-	a.openList = list.NewList[*Node]()
+	a.closeList = make(map[V]*Node[V])
+	a.openList = list.NewList(func(element *Node[V]) float64 {
+		return element.totalCost
+	})
 	// 开始探索
 	path, result = a.search()
 	return
@@ -74,8 +76,8 @@ func (a *AStar) Planning(startIndex, targetIndex int) (path []int, result bool) 
 //	@receiver a
 //	@return path 巡航路径
 //	@return result 是否巡航成功
-func (a *AStar) search() (path []int, result bool) {
-	path = make([]int, 0)
+func (a *AStar[V]) search() (path []V, result bool) {
+	path = make([]V, 0)
 	// 将开始节点放入关闭列表
 	a.closeList[a.stratIndex] = a.getNode(a.stratIndex, a.currIndex)
 	for {
@@ -104,8 +106,8 @@ func (a *AStar) search() (path []int, result bool) {
 //	@param index 节点坐标
 //	@param parentIndex 父节点坐标
 //	@return *Node 生成的节点对象
-func (a *AStar) getNode(index, parentIndex int) *Node {
-	node := &Node{
+func (a *AStar[V]) getNode(index, parentIndex V) *Node[V] {
+	node := &Node[V]{
 		index: index,
 	}
 	if index == parentIndex { // 自身就是父节点
@@ -129,7 +131,7 @@ func (a *AStar) getNode(index, parentIndex int) *Node {
 // searchAdjoinNode 探索相邻节点
 //
 //	@receiver a
-func (a *AStar) searchAdjoinNode() {
+func (a *AStar[V]) searchAdjoinNode() {
 	// 左节点
 	a.addHorizontalNode(a.currIndex - 1)
 	// 右节点
@@ -169,7 +171,7 @@ func (a *AStar) searchAdjoinNode() {
 //
 //	@receiver a
 //	@param index 节点坐标
-func (a *AStar) addHorizontalNode(index int) {
+func (a *AStar[V]) addHorizontalNode(index V) {
 	if a.isInMap(index) && a.diffCap(index, a.currIndex) == 0 && // 是否在地图范围、是否在同一行
 		!a.isObstacle(index) && !a.isInCloseList(index) { // 是否是障碍物，是否已被探索过
 		node := a.getNode(index, a.currIndex)
@@ -185,7 +187,7 @@ func (a *AStar) addHorizontalNode(index int) {
 //
 //	@receiver a
 //	@param index 节点坐标
-func (a *AStar) addVerticalNode(index int) {
+func (a *AStar[V]) addVerticalNode(index V) {
 	if a.isInMap(index) && // 是否在地图范围
 		!a.isObstacle(index) && !a.isInCloseList(index) { // 是否是障碍物，是否已被探索过
 		node := a.getNode(index, a.currIndex)
@@ -201,7 +203,7 @@ func (a *AStar) addVerticalNode(index int) {
 //
 //	@receiver a
 //	@param index 节点坐标
-func (a *AStar) addUpDiagonalNode(index int) {
+func (a *AStar[V]) addUpDiagonalNode(index V) {
 	if a.isInMap(index) && index/a.mapRow-a.currIndex/a.mapRow == 1 && // 是否在地图范围、是否在当前节点上一行
 		!a.isObstacle(index) && !a.isInCloseList(index) { // 是否是障碍物，是否已被探索过
 		node := a.getNode(index, a.currIndex)
@@ -217,7 +219,7 @@ func (a *AStar) addUpDiagonalNode(index int) {
 //
 //	@receiver a
 //	@param index 节点坐标
-func (a *AStar) addDownDiagonalNode(index int) {
+func (a *AStar[V]) addDownDiagonalNode(index V) {
 	if a.isInMap(index) && index/a.mapRow-a.currIndex/a.mapRow == -1 && // 是否在地图范围、是否在当前节点下一行
 		!a.isObstacle(index) && !a.isInCloseList(index) { // 是否是障碍物，是否已被探索过
 		node := a.getNode(index, a.currIndex)
@@ -234,7 +236,7 @@ func (a *AStar) addDownDiagonalNode(index int) {
 //	@receiver a
 //	@param index 节点坐标
 //	@return float64 预估代价
-func (a *AStar) getEstimate(index int) float64 {
+func (a *AStar[V]) getEstimate(index V) float64 {
 	estimate := float64(0)
 	if a.diagonal {
 		estimate = a.euclidDIstance(index)
@@ -249,7 +251,7 @@ func (a *AStar) getEstimate(index int) float64 {
 //	@receiver a
 //	@param index 节点坐标
 //	@return float64 预估代价
-func (a *AStar) manhattanDistance(index int) float64 {
+func (a *AStar[V]) manhattanDistance(index V) float64 {
 	xDistance := math.Abs(float64(a.diffRow(index, a.targetIndex))) // x轴距离
 	yDistance := math.Abs(float64(a.diffCap(index, a.targetIndex))) // y轴距离
 	// 计算x和y的距离总和
@@ -264,7 +266,7 @@ func (a *AStar) manhattanDistance(index int) float64 {
 //	@receiver a
 //	@param index 节点坐标
 //	@return float64 预估代价
-func (a *AStar) euclidDIstance(index int) float64 {
+func (a *AStar[V]) euclidDIstance(index V) float64 {
 	xDistance := math.Abs(float64(a.diffRow(index, a.targetIndex))) // x轴距离
 	yDistance := math.Abs(float64(a.diffCap(index, a.targetIndex))) // y轴距离
 	// 计算直线距离
@@ -277,15 +279,15 @@ func (a *AStar) euclidDIstance(index int) float64 {
 // backtrack 回溯节点
 //
 //	@receiver a
-//	@return []int 巡航路径
-func (a *AStar) backtrack() []int {
-	path := make([]int, 0)
+//	@return []V 巡航路径
+func (a *AStar[V]) backtrack() []V {
+	path := make([]V, 0)
 	currNode := a.closeList[a.targetIndex]
 	path = append(path, currNode.index)
 	for {
 		// 如果已经在起点，停止回溯
 		parentNode := a.closeList[currNode.parentIndex]
-		path = append([]int{parentNode.index}, path...)
+		path = append([]V{parentNode.index}, path...)
 		if parentNode.parentIndex == -1 {
 			break
 		}
@@ -299,8 +301,8 @@ func (a *AStar) backtrack() []int {
 //	@receiver a
 //	@param index 当前节点
 //	@param contrast 对比节点
-//	@return int 行差
-func (a *AStar) diffCap(index, contrast int) int {
+//	@return V 行差
+func (a *AStar[V]) diffCap(index, contrast V) V {
 	return index/a.mapRow - contrast/a.mapRow
 }
 
@@ -309,8 +311,8 @@ func (a *AStar) diffCap(index, contrast int) int {
 //	@receiver a
 //	@param index 当前节点
 //	@param contrast 对比节点
-//	@return int 列差
-func (a *AStar) diffRow(index, contrast int) int {
+//	@return V 列差
+func (a *AStar[V]) diffRow(index, contrast V) V {
 	return index%a.mapRow - contrast%a.mapRow
 }
 
@@ -319,7 +321,7 @@ func (a *AStar) diffRow(index, contrast int) int {
 //	@receiver a
 //	@param index 节点坐标
 //	@return bool 是否在地图里
-func (a *AStar) isInMap(index int) bool {
+func (a *AStar[V]) isInMap(index V) bool {
 	return index >= 0 && index <= a.maxNode
 }
 
@@ -328,7 +330,7 @@ func (a *AStar) isInMap(index int) bool {
 //	@receiver a
 //	@param index 节点坐标
 //	@return bool 是否障碍物
-func (a *AStar) isObstacle(index int) bool {
+func (a *AStar[V]) isObstacle(index V) bool {
 	_, ok := a.obstacles[index]
 	return ok
 }
@@ -338,15 +340,7 @@ func (a *AStar) isObstacle(index int) bool {
 //	@receiver a
 //	@param index 节点坐标
 //	@return bool 是否在关闭列表
-func (a *AStar) isInCloseList(index int) bool {
+func (a *AStar[V]) isInCloseList(index V) bool {
 	_, ok := a.closeList[index]
 	return ok
-}
-
-// GetScore 返回节点总代价
-//
-//	@receiver n
-//	@return float64 节点总代价
-func (n *Node) GetScore() float64 {
-	return n.totalCost
 }
