@@ -1,5 +1,7 @@
 package general
 
+import "math/rand"
+
 /*
 数组穷举
 穷举数组拆分的所有可能（如：[]int{1,2,3}，拆分长度2，最终拆分结果为[][]int{{1,2},{1,3},{2,3}}）
@@ -55,7 +57,7 @@ func Shuffle[T any](array []T) (result []T) {
 	if len(result) <= 1 {
 		return result
 	}
-	Rand.Shuffle(len(result), func(i, j int) {
+	rand.Shuffle(len(result), func(i, j int) {
 		result[i], result[j] = result[j], result[i]
 	})
 	return

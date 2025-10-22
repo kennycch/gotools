@@ -5,7 +5,9 @@ import (
 	"crypto/sha1"
 	"encoding/json"
 	"fmt"
+	"math/rand"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 )
@@ -50,8 +52,9 @@ randomStr 生成的字符串
 func RandomStr(length uint) (randomStr string) {
 	charArr := strings.Split(Char, "")
 	charlen := len(charArr)
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 	for i := 1; i <= int(length); i++ {
-		randomStr += charArr[Rand.Intn(charlen)]
+		randomStr += charArr[r.Intn(charlen)]
 	}
 	return
 }

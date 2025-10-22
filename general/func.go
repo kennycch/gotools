@@ -1,15 +1,9 @@
 package general
 
 import (
-	"math/rand"
 	"strconv"
 	"strings"
-	"time"
 )
-
-func init() {
-	Rand = rand.New(rand.NewSource(time.Now().UnixNano()))
-}
 
 /*
 版本对比

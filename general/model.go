@@ -1,7 +1,6 @@
 package general
 
 import (
-	"math/rand"
 	"net"
 	"net/http"
 	"time"
@@ -81,8 +80,6 @@ type Float interface {
 }
 
 var (
-	// 随机种子
-	Rand *rand.Rand
 	// Http请求配置
 	httpClient = &http.Client{
 		Transport: &http.Transport{
